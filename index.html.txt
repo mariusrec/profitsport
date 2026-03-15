@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ProfitSport — Matched Betting Romania</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#08100A;--bg2:#0C150E;--bg3:#101A12;
+  --card:#141E16;--card2:#192019;--card3:#1E271E;
+  --border:#1E2E20;--border2:#253528;--border3:#2E4030;
+  --green:#1AE05A;--green2:#15C24E;--green3:#0FA040;
+  --gdim:rgba(26,224,90,0.10);--gglow:rgba(26,224,90,0.22);
+  --amber:#F5A623;--adim:rgba(245,166,35,0.10);
+  --red:#FF4D4D;--rdim:rgba(255,77,77,0.10);
+  --blue:#38BDF8;--bdim:rgba(56,189,248,0.10);
+  --purple:#C084FC;--pdim:rgba(192,132,252,0.10);
+  --teal:#2DD4BF;--tdim:rgba(45,212,191,0.10);
+  --text:#D4E8D4;--muted:#4E6850;--muted2:#364E38;
+  --font:'Figtree',sans-serif;--mono:'DM Mono',monospace;
+}
+html,body,#root{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
+button,input,select,textarea{font-family:var(--font);}
+::-webkit-scrollbar{width:2px;height:2px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:2px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 0 var(–gglow)}50%{box-shadow:0 0 0 8px transparent}}
+@keyframes scanLine{0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+@keyframes slideRight{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes numberUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(–green),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 10px var(–green);pointer-events:none;}
+.fade-up{animation:fadeUp .25s ease both;}
+.spin{animation:spin 1s linear infinite;}
+</style>
+
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+
+// ════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════
+
+const OFFERS=[
+{id:1,bm:“Superbet”,type:“FREEBET”,badge:“🔥 HOT”,title:“4 × 50 RON Freebets”,value:200,profit:“~145 RON”,expiry:“3 zile”,minOdds:1.70,sport:“Sport”,color:”#FF4D4D”,
+steps:[
+{t:“Depune 100 RON pe Superbet”,d:“Mergi la Superbet → Depunere. Metodă recomandată: card bancar sau Revolut. Suma minimă: 100 RON.”},
+{t:“Plasează un pariu qualifier”,d:“Alege Champions League sau Premier League. Cotă minimă 1.70. Miză: 50 RON. Acest pariu deblochează freebetul.”},
+{t:“Acoperă pe Betfair Exchange”,d:“Deschide Betfair Exchange simultan. Găsește același meci. Plasează LAY folosind calculatorul din tab-ul Calc.”},
+{t:“Primești 4 × 50 RON freebets”,d:“După decontare, Superbet creditează 4 freebets de 50 RON. Expiră în 7 zile — nu le lăsa să expire.”},
+{t:“Convertește fiecare freebet”,d:“Tip SNR în calculator. Cote ideale: 4.00–5.00. La spread mic obții ~72% = ~144 RON profit net total.”},
+]},
+{id:2,bm:“Betano”,type:“CASHBACK”,badge:“⚡ NOU”,title:“Money Back 500 RON”,value:500,profit:“~175 RON”,expiry:“5 zile”,minOdds:1.60,sport:“Fotbal”,color:”#F5A623”,
+steps:[
+{t:“Depune minim 50 RON”,d:“Mergi la Betano → Cont → Depunere. Suma minimă pentru ofertă: 50 RON.”},
+{t:“Pariază pe 1X2 rezultat final”,d:“Alege meci cu cotă 1.60–2.20. Miză: 100 RON.”},
+{t:“Acoperă pe Betfair”,d:“Calculator → Bani Reali. Pierderea netă din qualifier trebuie să fie sub 5 RON.”},
+{t:“Dacă pierzi cu 1 gol”,d:“Betano returnează miza ca freebet. Convertește cu calculatorul SNR la cote 4.00+.”},
+{t:“Extrage profitul”,d:“Profit estimat din freebet 500 RON: ~175 RON. Retrage pe același cont din care ai depus.”},
+]},
+{id:3,bm:“Unibet”,type:“FREEBET”,badge:“📅 VINERI”,title:“Friday Freebet 75 RON”,value:75,profit:“~52 RON”,expiry:“2 zile”,minOdds:1.50,sport:“Orice”,color:”#38BDF8”,
+steps:[
+{t:“Verifică eligibilitatea”,d:“Oferta e disponibilă vineri pentru utilizatori care au pariat min. 50 RON săptămâna anterioară.”},
+{t:“Acceptă oferta”,d:“Secțiunea Promoții → apasă Activează. Freebet-ul apare automat în cont.”},
+{t:“Alege meci cu cotă 4.00–5.00”,d:“Lichiditate bună pe Betfair: Champions League, Premier League, La Liga.”},
+{t:“Calculează și plasează”,d:“Calculator → Freebet SNR. Plasează LAY mai întâi, apoi BACK. Nu invers.”},
+{t:“Profit garantat”,d:“Indiferent de rezultat: ~52 RON din 75 RON freebet (conversie ~70%).”},
+]},
+{id:4,bm:“TotoGaming”,type:“TURNEU”,badge:“🏆 TURNEU”,title:“Turneul Toto Sport”,value:1500,profit:“EV+17 RON”,expiry:“4 zile”,minOdds:5.00,sport:“Fotbal”,color:”#C084FC”,
+steps:[
+{t:“Înscrie-te în turneu”,d:“TotoGaming → Turneul Toto Sport → Participă. Înscrierea e gratuită.”},
+{t:“Strategia: cote mari + acoperire”,d:“Punctele sunt proporționale cu cota câștigată. Ai nevoie de pariuri câștigate la cote 10.00+.”},
+{t:“Acoperă parțial pe Betfair”,d:“Nu acoperi 100% — lași o pierdere mică (~8 RON) pentru a păstra șansele la premiu.”},
+{t:“Dacă pariul câștigă”,d:“Urci în clasament. Top 10: premii cash garantate. Premiu 1: 500 RON, premiu 2: 300 RON.”},
+{t:“Indiferent de rezultat”,d:“Pierdere maximă: ~8 RON. EV pozitiv dacă ai șanse rezonabile la primele locuri.”},
+]},
+{id:5,bm:“Fortuna”,type:“CASHBACK”,badge:“📆 LUNI”,title:“Cashback 15% Săptămânal”,value:300,profit:“~22 RON/săpt”,expiry:“1 zi”,minOdds:1.40,sport:“Sport”,color:”#2DD4BF”,
+steps:[
+{t:“Verifică pierderea netă”,d:“Fortuna calculează automat pierderea netă din ultimele 7 zile.”},
+{t:“Strategia partial covering”,d:“Plasează 200 RON acoperit parțial. Lași o pierdere intenționată de ~30 RON la bookmaker.”},
+{t:“Primești 15% cashback”,d:“15% din 200 RON = 30 RON înapoi ca freebet sau bani reali.”},
+{t:“Convertește cashback-ul”,d:“Dacă e freebet: calculator SNR. Dacă bani reali cu rulaj 1x: poți retrage aproape integral.”},
+{t:“Profit net săptămânal”,d:“Pierdere acoperire parțială: ~8 RON. Cashback: ~30 RON. Profit net: ~22 RON recurent.”},
+]},
+{id:6,bm:“MaxBet”,type:“RELOAD”,badge:“🔄 MARȚI”,title:“Reload 20% — 100 RON”,value:100,profit:“~65 RON”,expiry:“6 ore”,minOdds:1.60,sport:“Sport”,color:”#F5A623”,
+steps:[
+{t:“Depune marți 10:00–22:00”,d:“Bonusul e activ doar marțea. Depune min. 50 RON pentru reload 20% (max. 100 RON bonus).”},
+{t:“Rulaj 5x pe cotă min. 1.60”,d:“Plasează pariuri acoperite la cote 1.80–2.20. Pierdere minimă din spread.”},
+{t:“Calculează pierderea din rulaj”,d:“La 5x rulaj pe cote 1.80–2.00 acoperite integral: pierdere netă ~3–5 RON.”},
+{t:“Retrage după rulaj”,d:“Odată îndeplinit rulajul, toți banii sunt eligibili pentru retragere. Profit net: ~65 RON.”},
+]},
+];
+
+const BM_COLOR={Superbet:”#FF4D4D”,Betano:”#F5A623”,Unibet:”#38BDF8”,Fortuna:”#2DD4BF”,MaxBet:”#F5A623”,TotoGaming:”#C084FC”,NapoleonGames:”#94A3B8”,NetBet:”#FB923C”};
+const BM_ICON={Superbet:“🔴”,Betano:“🟡”,Unibet:“🔵”,Fortuna:“🟢”,MaxBet:“🟠”,TotoGaming:“🟣”,NapoleonGames:“⚫”,NetBet:“🟤”};
+const TYPE_COLOR={FREEBET:“var(–green)”,CASHBACK:“var(–amber)”,TURNEU:“var(–purple)”,RELOAD:“var(–teal)”};
+const BET_TYPE_COLOR={“Simplu”:“var(–green)”,“Acumulator”:“var(–amber)”,“Sistem”:“var(–blue)”,“Freebet”:“var(–purple)”};
+
+const DEMO_SLIP={bookmaker:“Superbet”,date:“15.03.2025”,betType:“Acumulator”,rawType:“Acumulator 4 selecții”,stake:50,totalOdds:18.40,potentialWin:920,isFreebet:false,confidence:0.95,images:[],
+selections:[
+{match:“Real Madrid vs Man City”,market:“Rezultat Final”,pick:“Real Madrid”,odds:2.30,sport:“Fotbal”,status:“pending”},
+{match:“Bayern vs Arsenal”,market:“Ambele marchează”,pick:“Da”,odds:1.75,sport:“Fotbal”,status:“pending”},
+{match:“Djokovic vs Alcaraz”,market:“Câștigător”,pick:“Alcaraz”,odds:2.10,sport:“Tenis”,status:“pending”},
+{match:“Lakers vs Celtics”,market:“Handicap”,pick:“Lakers -3.5”,odds:2.30,sport:“Baschet”,status:“pending”},
+],notes:“Bon acumulator 4 sporturi. Cotă cu bonus fidelitate 5%.”
+};
+
+const SEED_BETS=[
+{id:1,date:“10.03.25”,bm:“Superbet”,type:“Freebet SNR”,match:“Man City vs Arsenal”,back:4.50,lay:4.60,stake:50,profit:34.20,status:“won”},
+{id:2,date:“11.03.25”,bm:“Betano”,type:“Qualifier”,match:“Bayern vs PSG”,back:2.10,lay:2.14,stake:100,profit:-4.50,status:“lost”},
+{id:3,date:“11.03.25”,bm:“Betano”,type:“Freebet SNR”,match:“Bayern vs PSG”,back:4.20,lay:4.30,stake:175,profit:121.50,status:“won”},
+{id:4,date:“12.03.25”,bm:“Unibet”,type:“Freebet SNR”,match:“Real Madrid vs Atlético”,back:5.00,lay:5.10,stake:75,profit:51.80,status:“won”},
+{id:5,date:“13.03.25”,bm:“Fortuna”,type:“Cashback”,match:“Liverpool vs Chelsea”,back:1.90,lay:1.93,stake:200,profit:22.00,status:“won”},
+{id:6,date:“14.03.25”,bm:“MaxBet”,type:“Reload”,match:“Juventus vs Inter”,back:3.80,lay:3.90,stake:100,profit:33.10,status:“won”},
+];
+
+// ════════════════════════════════════════════════════════
+// ROOT
+// ════════════════════════════════════════════════════════
+
+function App(){
+const [tab,setTab]=useState(‘offers’);
+const [offerView,setOfferView]=useState(null); // null | {offer, step}
+const [scanView,setScanView]=useState(‘upload’); // upload | result
+const [scanResult,setScanResult]=useState(null);
+const [bets,setBets]=useState(SEED_BETS);
+const [slips,setSlips]=useState([]);
+const [notifs,setNotifs]=useState([
+{id:1,text:“Ofertă nouă: Superbet Enhanced Odds CL”,time:“2 min”,read:false},
+{id:2,text:“Reamintire: Unibet Friday expiră în 8 ore”,time:“1 oră”,read:false},
+{id:3,text:“TotoGaming: Turneul săptămânal a început”,time:“3 ore”,read:true},
+]);
+const [notifOpen,setNotifOpen]=useState(false);
+
+const unread=notifs.filter(n=>!n.read).length;
+const totalProfit=bets.reduce((s,b)=>s+b.profit,0);
+
+const handleScanResult=(slip)=>{
+const withId={…slip,id:Date.now(),savedAt:new Date().toISOString()};
+setSlips(prev=>[withId,…prev]);
+// also add to bets tracker
+if(slip.stake&&slip.potentialWin){
+setBets(prev=>[{
+id:Date.now()+1,
+date:slip.date||new Date().toLocaleDateString(‘ro’),
+bm:slip.bookmaker||’—’,
+type:slip.betType||’—’,
+match:slip.selections?.[0]?.match||‘Bon scanat’,
+back:slip.totalOdds||0,
+lay:0,
+stake:slip.stake,
+profit:0,
+status:‘pending’,
+fromScan:true,
+},…prev]);
+}
+setScanResult(withId);
+setScanView(‘result’);
+};
+
+const goTab=(t)=>{setTab(t);setOfferView(null);setScanView(‘upload’);};
+
+return(
+<div style={{display:‘flex’,flexDirection:‘column’,height:‘100vh’,maxWidth:480,margin:‘0 auto’,background:‘var(–bg)’}}>
+
+```
+  {/* ── TOP BAR ── */}
+  <div style={{height:52,background:'var(--bg2)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px',flexShrink:0,zIndex:50}}>
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      {(offerView||scanView==='result')&&(
+        <button onClick={()=>{setOfferView(null);setScanView('upload');}} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'1rem',padding:'0 8px 0 0',lineHeight:1}}>←</button>
+      )}
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <div style={{width:24,height:24,background:'var(--green)',borderRadius:5,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>⚡</div>
+        <span style={{fontWeight:900,fontSize:'.98rem',letterSpacing:'-0.5px'}}>Profit<span style={{color:'var(--green)'}}>Sport</span></span>
+      </div>
+      <span style={{background:'var(--gdim)',border:'1px solid rgba(26,224,90,.15)',color:'var(--green)',fontSize:'.58rem',fontWeight:800,padding:'2px 7px',borderRadius:99,letterSpacing:'.8px',textTransform:'uppercase'}}>TRIAL</span>
+    </div>
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <div style={{background:'var(--card2)',border:'1px solid var(--border2)',borderRadius:8,padding:'4px 10px',display:'flex',alignItems:'center',gap:5}}>
+        <span style={{color:'var(--green)',fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:500}}>{totalProfit>=0?'+':''}{totalProfit.toFixed(0)} RON</span>
+      </div>
+      <div style={{position:'relative'}}>
+        <button onClick={()=>{setNotifOpen(!notifOpen);if(!notifOpen)setNotifs(n=>n.map(x=>({...x,read:true})));}} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'1.1rem',lineHeight:1,padding:4}}>🔔</button>
+        {unread>0&&<div style={{position:'absolute',top:0,right:0,width:13,height:13,background:'var(--red)',borderRadius:99,fontSize:'.55rem',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{unread}</div>}
+      </div>
+    </div>
+  </div>
+
+  {/* ── NOTIF PANEL ── */}
+  {notifOpen&&(
+    <div style={{position:'absolute',top:52,right:0,left:0,zIndex:100}} onClick={()=>setNotifOpen(false)}>
+      <div style={{position:'absolute',right:12,top:4,width:290,background:'var(--card3)',border:'1px solid var(--border3)',borderRadius:14,overflow:'hidden',boxShadow:'0 16px 40px rgba(0,0,0,.6)'}} onClick={e=>e.stopPropagation()}>
+        <div style={{padding:'11px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontWeight:700,fontSize:'.82rem'}}>Notificări</span>
+          <button onClick={()=>setNotifOpen(false)} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'1rem'}}>×</button>
+        </div>
+        {notifs.map(n=>(
+          <div key={n.id} style={{padding:'11px 14px',borderBottom:'1px solid var(--border)',display:'flex',gap:8,alignItems:'flex-start',background:n.read?'transparent':'rgba(26,224,90,.03)'}}>
+            <div style={{width:5,height:5,borderRadius:'50%',background:n.read?'var(--muted2)':'var(--green)',marginTop:5,flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:'.78rem',color:'var(--text)',lineHeight:1.4}}>{n.text}</div>
+              <div style={{fontSize:'.68rem',color:'var(--muted)',marginTop:3}}>{n.time} în urmă</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* ── MAIN ── */}
+  <div style={{flex:1,overflow:'auto'}}>
+    {tab==='offers'&&!offerView&&<OffersTab offers={OFFERS} onSelect={o=>setOfferView({offer:o,step:0})}/>}
+    {tab==='offers'&&offerView&&<OfferGuide offer={offerView.offer} step={offerView.step} setStep={s=>setOfferView({...offerView,step:s})} onBack={()=>setOfferView(null)}/>}
+    {tab==='calc'&&<CalcTab/>}
+    {tab==='tracker'&&<TrackerTab bets={bets} setBets={setBets}/>}
+    {tab==='scan'&&scanView==='upload'&&<ScanTab onResult={handleScanResult}/>}
+    {tab==='scan'&&scanView==='result'&&scanResult&&<ScanResult slip={scanResult} onNew={()=>setScanView('upload')}/>}
+    {tab==='profile'&&<ProfileTab/>}
+  </div>
+
+  {/* ── BOTTOM NAV ── */}
+  <div style={{height:60,background:'var(--bg2)',borderTop:'1px solid var(--border)',display:'flex',flexShrink:0,zIndex:50}}>
+    {[
+      {id:'offers',icon:'🎯',label:'Oferte'},
+      {id:'calc',icon:'🧮',label:'Calc'},
+      {id:'scan',icon:'📸',label:'Scanner'},
+      {id:'tracker',icon:'📊',label:'Profit'},
+      {id:'profile',icon:'👤',label:'Cont'},
+    ].map(t=>(
+      <button key={t.id} onClick={()=>goTab(t.id)}
+        style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,background:'none',border:'none',cursor:'pointer',color:tab===t.id?'var(--green)':'var(--muted)',transition:'color .15s',padding:'6px 0',position:'relative'}}>
+        {tab===t.id&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:28,height:2,background:'var(--green)',borderRadius:1}}/>}
+        <span style={{fontSize:tab===t.id?'1.25rem':'1.05rem',transition:'font-size .15s'}}>{t.icon}</span>
+        <span style={{fontSize:'.6rem',fontWeight:tab===t.id?700:400,letterSpacing:'.2px'}}>{t.label}</span>
+      </button>
+    ))}
+  </div>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// OFFERS TAB
+// ════════════════════════════════════════════════════════
+
+function OffersTab({offers,onSelect}){
+const [filter,setFilter]=useState(‘ALL’);
+const types=[‘ALL’,‘FREEBET’,‘CASHBACK’,‘TURNEU’,‘RELOAD’];
+const filtered=filter===‘ALL’?offers:offers.filter(o=>o.type===filter);
+const totalVal=offers.reduce((s,o)=>s+o.value,0);
+
+return(
+<div style={{padding:‘14px 14px 20px’}}>
+{/* SUMMARY */}
+<div style={{background:‘linear-gradient(135deg,var(–card3),var(–card2))’,border:‘1px solid var(–border2)’,borderRadius:16,padding:‘16px 18px’,marginBottom:14,position:‘relative’,overflow:‘hidden’}}>
+<div style={{position:‘absolute’,inset:0,background:‘radial-gradient(ellipse 60% 50% at 80% 20%,rgba(26,224,90,.07) 0%,transparent 70%)’,pointerEvents:‘none’}}/>
+<div style={{fontSize:’.65rem’,color:‘var(–muted)’,textTransform:‘uppercase’,letterSpacing:‘1.2px’,marginBottom:8,fontWeight:700}}>Oferte active azi</div>
+<div style={{display:‘flex’,justifyContent:‘space-between’,alignItems:‘flex-end’}}>
+<div>
+<div style={{fontFamily:‘var(–mono)’,fontSize:‘2rem’,color:‘var(–green)’,lineHeight:1,fontWeight:500}}>+660 <span style={{fontSize:‘1rem’}}>RON</span></div>
+<div style={{fontSize:’.72rem’,color:‘var(–muted)’,marginTop:4}}>profit estimat disponibil</div>
+</div>
+<div style={{textAlign:‘right’}}>
+<div style={{fontSize:‘2rem’,fontWeight:900,color:‘var(–text)’,lineHeight:1}}>{offers.length}</div>
+<div style={{fontSize:’.72rem’,color:‘var(–muted)’,marginTop:4}}>oferte active</div>
+</div>
+</div>
+</div>
+
+```
+  {/* FILTER CHIPS */}
+  <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:6,marginBottom:12}}>
+    {types.map(t=>(
+      <button key={t} onClick={()=>setFilter(t)} style={{flexShrink:0,padding:'5px 13px',borderRadius:99,border:'1px solid',borderColor:filter===t?'var(--green)':'var(--border2)',background:filter===t?'var(--gdim)':'transparent',color:filter===t?'var(--green)':'var(--muted)',fontSize:'.72rem',fontWeight:600,cursor:'pointer',transition:'all .15s'}}>
+        {t}
+      </button>
+    ))}
+  </div>
+
+  {/* OFFER LIST */}
+  <div style={{display:'flex',flexDirection:'column',gap:9}}>
+    {filtered.map(o=>(
+      <button key={o.id} onClick={()=>onSelect(o)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'14px',textAlign:'left',cursor:'pointer',width:'100%',fontFamily:'var(--font)',transition:'border-color .15s'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+          <div style={{display:'flex',gap:10,alignItems:'center'}}>
+            <div style={{width:38,height:38,borderRadius:10,background:o.color+'18',border:`1px solid ${o.color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.1rem',flexShrink:0}}>
+              {BM_ICON[o.bm]||'📋'}
+            </div>
+            <div>
+              <div style={{fontWeight:800,fontSize:'.9rem',color:'var(--text)'}}>{o.bm}</div>
+              <div style={{fontSize:'.72rem',color:'var(--muted)',marginTop:1}}>{o.title}</div>
+            </div>
+          </div>
+          <div style={{background:'var(--gdim)',border:'1px solid rgba(26,224,90,.18)',borderRadius:8,padding:'4px 9px',flexShrink:0}}>
+            <span style={{fontFamily:'var(--mono)',fontSize:'.78rem',color:'var(--green)',fontWeight:500}}>{o.profit}</span>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+          {[o.badge,`⏱ ${o.expiry}`,`min ${o.minOdds}`,o.sport].map((tag,i)=>(
+            <span key={i} style={{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:5,padding:'2px 7px',fontSize:'.65rem',color:'var(--muted)'}}>{tag}</span>
+          ))}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{flex:1,height:3,background:'var(--border)',borderRadius:99,overflow:'hidden'}}>
+            <div style={{height:'100%',width:`${(o.steps.length/5)*100}%`,background:`linear-gradient(90deg,${o.color},${o.color}88)`,borderRadius:99}}/>
+          </div>
+          <span style={{fontSize:'.68rem',color:'var(--green)',fontWeight:700}}>{o.steps.length} pași →</span>
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// OFFER GUIDE
+// ════════════════════════════════════════════════════════
+
+function OfferGuide({offer,step,setStep,onBack}){
+const [done,setDone]=useState([]);
+const total=offer.steps.length;
+const isLast=step===total-1;
+const allDone=done.length===total;
+
+const markDone=()=>{
+if(!done.includes(step))setDone([…done,step]);
+if(!isLast)setStep(step+1);
+};
+
+return(
+<div style={{padding:‘14px 14px 24px’}} className=“fade-up”>
+<button onClick={onBack} style={{background:‘none’,border:‘none’,color:‘var(–muted)’,cursor:‘pointer’,fontSize:’.82rem’,display:‘flex’,alignItems:‘center’,gap:5,marginBottom:14,fontFamily:‘var(–font)’,padding:0}}>
+← Înapoi
+</button>
+
+```
+  {/* HEADER */}
+  <div style={{background:`linear-gradient(135deg,${offer.color}14,${offer.color}06)`,border:`1px solid ${offer.color}25`,borderRadius:16,padding:'16px',marginBottom:14}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+      <div>
+        <div style={{fontSize:'.62rem',color:offer.color,textTransform:'uppercase',letterSpacing:'1.2px',fontWeight:800,marginBottom:4}}>{offer.bm} · {offer.type}</div>
+        <div style={{fontWeight:800,fontSize:'1rem',color:'var(--text)',marginBottom:3}}>{offer.title}</div>
+        <div style={{fontFamily:'var(--mono)',fontSize:'.88rem',color:'var(--green)'}}>{offer.profit}</div>
+      </div>
+      <div style={{background:'var(--gdim)',border:'1px solid rgba(26,224,90,.18)',borderRadius:10,padding:'8px 12px',textAlign:'center',flexShrink:0}}>
+        <div style={{fontSize:'.6rem',color:'var(--muted)',marginBottom:2}}>PAȘI</div>
+        <div style={{fontWeight:900,fontSize:'1.1rem',color:'var(--green)'}}>{done.length}/{total}</div>
+      </div>
+    </div>
+    {/* PROGRESS */}
+    <div style={{background:'var(--border)',borderRadius:99,height:5,overflow:'hidden'}}>
+      <div style={{height:'100%',background:`linear-gradient(90deg,var(--green),var(--green2))`,borderRadius:99,width:`${(done.length/total)*100}%`,transition:'width .4s ease'}}/>
+    </div>
+  </div>
+
+  {/* STEP DOTS */}
+  <div style={{display:'flex',gap:6,marginBottom:14,justifyContent:'center'}}>
+    {offer.steps.map((_,i)=>(
+      <button key={i} onClick={()=>setStep(i)} style={{width:32,height:32,borderRadius:'50%',border:'2px solid',borderColor:done.includes(i)?'var(--green)':i===step?'var(--green)':'var(--border2)',background:done.includes(i)?'var(--green)':i===step?'var(--gdim)':'transparent',color:done.includes(i)?'var(--bg)':i===step?'var(--green)':'var(--muted)',fontWeight:900,fontSize:'.78rem',cursor:'pointer',transition:'all .2s'}}>
+        {done.includes(i)?'✓':i+1}
+      </button>
+    ))}
+  </div>
+
+  {/* CURRENT STEP */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border2)',borderRadius:14,padding:'18px',marginBottom:10}} key={step}>
+    <div style={{fontSize:'.62rem',color:'var(--green)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:800,marginBottom:8}}>Pasul {step+1} din {total}</div>
+    <div style={{fontWeight:800,fontSize:'1rem',color:'var(--text)',marginBottom:10,lineHeight:1.3}}>{offer.steps[step].t}</div>
+    <div style={{fontSize:'.86rem',color:'var(--muted)',lineHeight:1.7}}>{offer.steps[step].d}</div>
+  </div>
+
+  {/* CALC HINT */}
+  {offer.steps[step].t.toLowerCase().includes('acoper')&&(
+    <div style={{background:'var(--bdim)',border:'1px solid rgba(56,189,248,.18)',borderRadius:10,padding:'11px 14px',marginBottom:10,display:'flex',gap:8,alignItems:'center'}}>
+      <span style={{fontSize:'1.1rem'}}>🧮</span>
+      <div>
+        <div style={{fontSize:'.76rem',fontWeight:700,color:'var(--blue)'}}>Folosește tab-ul Calc</div>
+        <div style={{fontSize:'.68rem',color:'var(--muted)',marginTop:1}}>Introdu cotele → obții lay stake exact și profitul garantat</div>
+      </div>
+    </div>
+  )}
+
+  {/* ACTIONS */}
+  <div style={{display:'flex',gap:8}}>
+    {step>0&&<button onClick={()=>setStep(step-1)} style={{flex:1,padding:'12px',borderRadius:10,border:'1px solid var(--border2)',background:'none',color:'var(--muted)',fontWeight:600,fontSize:'.86rem',cursor:'pointer'}}>← Anterior</button>}
+    <button onClick={markDone} style={{flex:2,padding:'12px',borderRadius:10,border:'none',background:allDone?'var(--green3)':'var(--green)',color:'var(--bg)',fontWeight:800,fontSize:'.9rem',cursor:'pointer',transition:'background .2s'}}>
+      {allDone?'✓ Finalizat!':isLast?'Completează ✓':'Am făcut asta →'}
+    </button>
+  </div>
+
+  {allDone&&(
+    <div style={{marginTop:10,background:'var(--gdim)',border:'1px solid rgba(26,224,90,.2)',borderRadius:12,padding:'13px',textAlign:'center'}}>
+      <div style={{fontSize:'1.3rem',marginBottom:5}}>🎉</div>
+      <div style={{fontWeight:700,color:'var(--green)',fontSize:'.88rem'}}>Ai finalizat toți pașii!</div>
+      <div style={{fontSize:'.76rem',color:'var(--muted)',marginTop:4}}>Adaugă profitul în tab-ul Profit pentru tracking complet.</div>
+    </div>
+  )}
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// CALCULATOR TAB
+// ════════════════════════════════════════════════════════
+
+function CalcTab(){
+const [type,setType]=useState(‘SNR’);
+const [bs,setBs]=useState(‘50’);
+const [bo,setBo]=useState(‘4.50’);
+const [lo,setLo]=useState(‘4.60’);
+const [com,setCom]=useState(‘5’);
+
+const res=useMemo(()=>{
+const bsN=parseFloat(bs)||0,boN=parseFloat(bo)||0,loN=parseFloat(lo)||0,comN=(parseFloat(com)||0)/100;
+if(!bsN||!boN||loN<=1)return null;
+let ls;
+if(type===‘SNR’) ls=(bsN*(boN-1))/(loN*(1-comN));
+else if(type===‘SR’) ls=(bsN*boN)/(loN*(1-comN));
+else ls=(bsN*boN)/(loN*(1-comN));
+const liab=ls*(loN-1);
+let pBack,pLay;
+if(type===‘SNR’){pBack=(boN-1)*bsN-ls*(loN-1);pLay=ls*(1-comN);}
+else if(type===‘SR’){pBack=boN*bsN-ls*(loN-1)-bsN;pLay=ls*(1-comN)-bsN;}
+else{pBack=(boN-1)*bsN-ls*(loN-1);pLay=ls*(1-comN)-bsN;}
+return{ls:ls.toFixed(2),liab:liab.toFixed(2),pBack:pBack.toFixed(2),pLay:pLay.toFixed(2)};
+},[type,bs,bo,lo,com]);
+
+const F=({label,val,onChange,pre})=>(
+<div style={{flex:1}}>
+<div style={{fontSize:’.62rem’,color:‘var(–muted)’,textTransform:‘uppercase’,letterSpacing:’.8px’,marginBottom:4,fontWeight:700}}>{label}</div>
+<div style={{position:‘relative’}}>
+{pre&&<span style={{position:‘absolute’,left:9,top:‘50%’,transform:‘translateY(-50%)’,color:‘var(–muted)’,fontSize:’.82rem’,pointerEvents:‘none’}}>{pre}</span>}
+<input value={val} onChange={e=>onChange(e.target.value)} type=“number” step=“0.01”
+style={{width:‘100%’,background:‘var(–bg3)’,border:‘1px solid var(–border2)’,borderRadius:8,padding:`9px 9px 9px ${pre?'22px':'9px'}`,color:‘var(–text)’,fontSize:’.95rem’,fontFamily:‘var(–mono)’,outline:‘none’,transition:‘border-color .15s’}}/>
+</div>
+</div>
+);
+
+return(
+<div style={{padding:‘14px 14px 24px’}}>
+<div style={{fontWeight:800,fontSize:‘1.05rem’,marginBottom:4}}>Calculator Back / Lay</div>
+<div style={{fontSize:’.8rem’,color:‘var(–muted)’,marginBottom:14}}>Calculează lay stake și profitul garantat pentru orice tip de pariu.</div>
+
+```
+  {/* TYPE TOGGLE */}
+  <div style={{display:'flex',gap:4,background:'var(--bg3)',borderRadius:10,padding:3,marginBottom:14}}>
+    {[['SNR','Freebet SNR'],['SR','Freebet SR'],['REAL','Bani Reali']].map(([v,l])=>(
+      <button key={v} onClick={()=>setType(v)} style={{flex:1,padding:'7px 4px',borderRadius:7,border:'none',background:type===v?'var(--card3)':'transparent',color:type===v?'var(--green)':'var(--muted)',fontWeight:type===v?700:400,fontSize:'.72rem',cursor:'pointer',transition:'all .15s'}}>
+        {l}
+      </button>
+    ))}
+  </div>
+
+  {/* INPUTS */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:14,marginBottom:10}}>
+    <div style={{display:'flex',gap:8,marginBottom:10}}>
+      <F label="Miză Back (RON)" val={bs} onChange={setBs}/>
+      <F label="Cotă Back" val={bo} onChange={setBo}/>
+    </div>
+    <div style={{display:'flex',gap:8}}>
+      <F label="Cotă Lay (Betfair)" val={lo} onChange={setLo}/>
+      <F label="Comision %" val={com} onChange={setCom} pre="%"/>
+    </div>
+  </div>
+
+  {/* RESULT */}
+  {res&&(
+    <div style={{background:'var(--card)',border:'1px solid var(--border2)',borderRadius:14,padding:14,marginBottom:10}} key={res.ls}>
+      <div style={{background:'var(--gdim)',border:'1px solid rgba(26,224,90,.2)',borderRadius:10,padding:'13px 15px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{fontSize:'.62rem',color:'var(--green)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:800,marginBottom:3}}>Lay Stake pe Betfair</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'1.6rem',color:'var(--green)',lineHeight:1}}>{res.ls} <span style={{fontSize:'1rem',opacity:.7}}>RON</span></div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontSize:'.62rem',color:'var(--muted)',marginBottom:3}}>Liability</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'1rem',color:'var(--amber)'}}>{res.liab} RON</div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {[
+          {l:'Dacă Back câștigă',v:res.pBack,c:parseFloat(res.pBack)>=0?'var(--green)':'var(--red)'},
+          {l:'Dacă Lay câștigă',v:res.pLay,c:parseFloat(res.pLay)>=0?'var(--green)':'var(--red)'},
+        ].map((it,i)=>(
+          <div key={i} style={{background:'var(--bg3)',borderRadius:8,padding:'11px',textAlign:'center'}}>
+            <div style={{fontSize:'.62rem',color:'var(--muted)',marginBottom:5,lineHeight:1.3}}>{it.l}</div>
+            <div style={{fontFamily:'var(--mono)',fontSize:'.95rem',color:it.c,fontWeight:500}}>{parseFloat(it.v)>=0?'+':''}{it.v} RON</div>
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:10,background:'var(--bg3)',borderRadius:8,padding:'9px 11px',fontSize:'.75rem',color:'var(--muted)',lineHeight:1.5}}>
+        <strong style={{color:'var(--text)'}}>Ordinea:</strong> Plasează <span style={{color:'var(--green)',fontWeight:700}}>LAY pe Betfair PRIMUL</span>, apoi BACK la bookmaker.
+      </div>
+    </div>
+  )}
+
+  {/* QUICK REF */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:14}}>
+    <div style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:10}}>Ghid cote → conversie freebet</div>
+    {[['3.00–4.00','60–68%','Calificatoare'],['4.00–5.00','68–76%','Freebets ✓ Ideal'],['5.00–7.00','76–82%','Profit maxim'],['7.00+','82%+','Atenție la spread']].map(([r,c,n],i)=>(
+      <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:i<3?'1px solid var(--border)':'none'}}>
+        <span style={{fontFamily:'var(--mono)',fontSize:'.76rem',color:'var(--text)'}}>{r}</span>
+        <span style={{fontSize:'.76rem',color:'var(--green)',fontWeight:700}}>{c}</span>
+        <span style={{fontSize:'.72rem',color:'var(--muted)'}}>{n}</span>
+      </div>
+    ))}
+  </div>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// TRACKER TAB
+// ════════════════════════════════════════════════════════
+
+function TrackerTab({bets,setBets}){
+const [showAdd,setShowAdd]=useState(false);
+const [form,setForm]=useState({bm:‘Superbet’,type:‘Freebet SNR’,match:’’,back:’’,lay:’’,stake:’’,profit:’’});
+
+const totalProfit=bets.reduce((s,b)=>s+b.profit,0);
+const won=bets.filter(b=>b.profit>0).length;
+
+const byBm={};
+bets.forEach(b=>{byBm[b.bm]=(byBm[b.bm]||0)+b.profit;});
+const sortedBm=Object.entries(byBm).sort((a,b)=>b[1]-a[1]);
+const maxBm=Math.max(…Object.values(byBm).map(Math.abs));
+
+const addBet=()=>{
+if(!form.match||form.profit===’’)return;
+setBets(prev=>[…prev,{…form,id:Date.now(),profit:parseFloat(form.profit),date:new Date().toLocaleDateString(‘ro’),status:parseFloat(form.profit)>=0?‘won’:‘lost’}]);
+setShowAdd(false);
+setForm({bm:‘Superbet’,type:‘Freebet SNR’,match:’’,back:’’,lay:’’,stake:’’,profit:’’});
+};
+
+return(
+<div style={{padding:‘14px 14px 24px’}}>
+{/* STATS */}
+<div style={{display:‘grid’,gridTemplateColumns:‘1fr 1fr 1fr’,gap:8,marginBottom:12}}>
+{[
+{l:‘Profit Total’,v:(totalProfit>=0?’+’:’’)+totalProfit.toFixed(0)+’ RON’,c:‘var(–green)’},
+{l:‘Pariuri’,v:bets.length,c:‘var(–text)’},
+{l:‘Rata Win’,v:bets.length?Math.round((won/bets.length)*100)+’%’:’—’,c:‘var(–amber)’},
+].map((s,i)=>(
+<div key={i} style={{background:‘var(–card)’,border:‘1px solid var(–border)’,borderRadius:11,padding:‘11px’,textAlign:‘center’}}>
+<div style={{fontSize:’.58rem’,color:‘var(–muted)’,textTransform:‘uppercase’,letterSpacing:’.8px’,marginBottom:4}}>{s.l}</div>
+<div style={{fontFamily:‘var(–mono)’,fontSize:‘1rem’,color:s.c,fontWeight:500}}>{s.v}</div>
+</div>
+))}
+</div>
+
+```
+  {/* BY BM */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:14,marginBottom:12}}>
+    <div style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:10}}>Profit pe Bookmaker</div>
+    {sortedBm.map(([bm,val])=>(
+      <div key={bm} style={{marginBottom:9}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+          <span style={{fontSize:'.8rem',color:'var(--text)',display:'flex',alignItems:'center',gap:5}}><span>{BM_ICON[bm]||'📋'}</span>{bm}</span>
+          <span style={{fontFamily:'var(--mono)',fontSize:'.8rem',color:val>=0?'var(--green)':'var(--red)',fontWeight:500}}>{val>=0?'+':''}{val.toFixed(0)} RON</span>
+        </div>
+        <div style={{background:'var(--border)',borderRadius:99,height:3,overflow:'hidden'}}>
+          <div style={{height:'100%',background:val>=0?'var(--green)':'var(--red)',borderRadius:99,width:(Math.abs(val)/maxBm*100)+'%',transition:'width .5s ease'}}/>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* ADD BUTTON */}
+  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+    <div style={{fontWeight:700,fontSize:'.88rem'}}>Istoricul Pariurilor</div>
+    <button onClick={()=>setShowAdd(!showAdd)} style={{background:'var(--green)',color:'var(--bg)',border:'none',borderRadius:8,padding:'6px 13px',fontSize:'.75rem',fontWeight:800,cursor:'pointer'}}>
+      + Adaugă
+    </button>
+  </div>
+
+  {/* ADD FORM */}
+  {showAdd&&(
+    <div style={{background:'var(--card)',border:'1px solid var(--green)',borderRadius:14,padding:14,marginBottom:10}} className="fade-up">
+      <div style={{fontSize:'.75rem',fontWeight:800,color:'var(--green)',marginBottom:10}}>Pariu Nou</div>
+      <div style={{display:'flex',gap:8,marginBottom:8}}>
+        <select value={form.bm} onChange={e=>setForm({...form,bm:e.target.value})} style={{flex:1,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px',color:'var(--text)',fontSize:'.8rem',outline:'none'}}>
+          {['Superbet','Betano','Unibet','Fortuna','MaxBet','TotoGaming'].map(b=><option key={b}>{b}</option>)}
+        </select>
+        <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} style={{flex:1,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px',color:'var(--text)',fontSize:'.8rem',outline:'none'}}>
+          {['Freebet SNR','Freebet SR','Qualifier','Cashback','Reload','Turneu'].map(t=><option key={t}>{t}</option>)}
+        </select>
+      </div>
+      <input placeholder="Meci (ex: Man City vs Arsenal)" value={form.match} onChange={e=>setForm({...form,match:e.target.value})}
+        style={{width:'100%',background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 10px',color:'var(--text)',fontSize:'.82rem',outline:'none',marginBottom:8}}/>
+      <div style={{display:'flex',gap:8,marginBottom:10}}>
+        <input placeholder="Cotă back" type="number" value={form.back} onChange={e=>setForm({...form,back:e.target.value})}
+          style={{flex:1,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px',color:'var(--text)',fontSize:'.82rem',fontFamily:'var(--mono)',outline:'none'}}/>
+        <input placeholder="Cotă lay" type="number" value={form.lay} onChange={e=>setForm({...form,lay:e.target.value})}
+          style={{flex:1,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px',color:'var(--text)',fontSize:'.82rem',fontFamily:'var(--mono)',outline:'none'}}/>
+        <input placeholder="Profit ±" type="number" value={form.profit} onChange={e=>setForm({...form,profit:e.target.value})}
+          style={{flex:1,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'8px',color:'var(--text)',fontSize:'.82rem',fontFamily:'var(--mono)',outline:'none'}}/>
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={addBet} style={{flex:2,padding:'10px',borderRadius:8,border:'none',background:'var(--green)',color:'var(--bg)',fontWeight:800,cursor:'pointer',fontSize:'.85rem'}}>Salvează</button>
+        <button onClick={()=>setShowAdd(false)} style={{flex:1,padding:'10px',borderRadius:8,border:'1px solid var(--border)',background:'none',color:'var(--muted)',cursor:'pointer',fontSize:'.85rem'}}>Anulează</button>
+      </div>
+    </div>
+  )}
+
+  {/* BET LIST */}
+  <div style={{display:'flex',flexDirection:'column',gap:7}}>
+    {[...bets].reverse().map(b=>(
+      <div key={b.id} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:11,padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+            <span style={{fontSize:'.82rem'}}>{BM_ICON[b.bm]||'📋'}</span>
+            <span style={{fontSize:'.8rem',fontWeight:700,color:'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.match}</span>
+          </div>
+          <div style={{fontSize:'.68rem',color:'var(--muted)'}}>{b.bm} · {b.type} · {b.date}{b.fromScan?' · 📸':''}</div>
+        </div>
+        <div style={{textAlign:'right',flexShrink:0,marginLeft:10}}>
+          <div style={{fontFamily:'var(--mono)',fontSize:'.9rem',color:b.profit>0?'var(--green)':b.profit<0?'var(--red)':'var(--muted)',fontWeight:500}}>
+            {b.profit>0?'+':''}{b.profit.toFixed(0)} RON
+          </div>
+          <div style={{fontSize:'.62rem',color:'var(--muted)',marginTop:1}}>{b.status==='won'?'✓':b.status==='lost'?'✗':'⏳'} {b.status}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// SCAN TAB
+// ════════════════════════════════════════════════════════
+
+function ScanTab({onResult}){
+const [images,setImages]=useState([]);
+const [scanning,setScanning]=useState(false);
+const [progress,setProgress]=useState(’’);
+const [error,setError]=useState(’’);
+const fileRef=useRef();
+
+const toBase64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(’,’)[1]);r.onerror=rej;r.readAsDataURL(f);});
+
+const handleFiles=async(files)=>{
+const imgs=[];
+for(const f of files){
+if(!f.type.startsWith(‘image/’)&&f.type!==‘application/pdf’)continue;
+const b64=await toBase64(f);
+imgs.push({file:f,preview:URL.createObjectURL(f),base64:b64,type:f.type});
+}
+setImages(prev=>[…prev,…imgs]);
+setError(’’);
+};
+
+const analyze=async()=>{
+if(!images.length){setError(‘Adaugă cel puțin un screenshot.’);return;}
+setScanning(true);setError(’’);
+try{
+setProgress(‘Se analizează imaginile…’);
+const imgContent=images.map(img=>({type:‘image’,source:{type:‘base64’,media_type:img.type===‘application/pdf’?‘image/jpeg’:img.type,data:img.base64}}));
+setProgress(‘AI procesează bonul…’);
+const resp=await fetch(‘https://api.anthropic.com/v1/messages’,{
+method:‘POST’,
+headers:{‘Content-Type’:‘application/json’},
+body:JSON.stringify({
+model:‘claude-sonnet-4-20250514’,
+max_tokens:2000,
+messages:[{role:‘user’,content:[…imgContent,{type:‘text’,text:`Ești expert în analiza bonurilor de pariuri sportive românești. Analizează imaginile și extrage TOATE datele din bon/bonuri.
+
+Returnează STRICT JSON valid (fără text suplimentar, fără markdown, fără backticks):
+{“bookmaker”:“Superbet/Betano/Unibet/Fortuna/MaxBet/TotoGaming/altul”,“date”:“DD.MM.YYYY sau null”,“betType”:“Simplu|Acumulator|Sistem|Freebet”,“rawType”:“descriere exactă”,“stake”:numar_sau_null,“totalOdds”:numar_sau_null,“potentialWin”:numar_sau_null,“isFreebet”:true/false,“confidence”:0.0-1.0,“selections”:[{“match”:“Echipa1 vs Echipa2”,“market”:“tip piață”,“pick”:“selecția exactă”,“odds”:numar_sau_null,“sport”:“Fotbal|Tenis|Baschet|altul”,“status”:“pending|won|lost|void”}],“notes”:“observații sau null”}
+
+Dacă sunt multiple bonuri în imagini diferite, returnează array. Câmpurile lipsă = null.`}]}]
+})
+});
+setProgress(‘Se procesează rezultatele…’);
+const data=await resp.json();
+if(data.error)throw new Error(data.error.message||‘Eroare API’);
+const text=data.content?.find(b=>b.type===‘text’)?.text||’’;
+let parsed;
+try{parsed=JSON.parse(text.replace(/`json|`/g,’’).trim());}
+catch{throw new Error(‘Imagine neclară. Încearcă un screenshot mai bun.’);}
+const slip=Array.isArray(parsed)?parsed[0]:parsed;
+if(!slip?.bookmaker&&!slip?.selections)throw new Error(‘Nu am găsit date despre pariu în imagine.’);
+onResult({…slip,images:images.map(i=>i.preview)});
+}catch(err){
+setError(err.message||‘A apărut o eroare. Încearcă din nou.’);
+}finally{setScanning(false);setProgress(’’);}
+};
+
+return(
+<div style={{padding:‘14px 14px 24px’}}>
+<div style={{fontWeight:800,fontSize:‘1.05rem’,marginBottom:4}}>Scanner Bon</div>
+<div style={{fontSize:’.8rem’,color:‘var(–muted)’,marginBottom:14}}>Fotografiază orice bon — AI-ul extrage automat toate detaliile.</div>
+
+```
+  {/* DROP ZONE */}
+  <div onClick={()=>!scanning&&fileRef.current.click()}
+    onDrop={e=>{e.preventDefault();handleFiles(Array.from(e.dataTransfer.files));}}
+    onDragOver={e=>e.preventDefault()}
+    style={{border:'2px dashed var(--border2)',borderRadius:16,padding:'28px 20px',textAlign:'center',cursor:scanning?'default':'pointer',background:'var(--card)',position:'relative',overflow:'hidden',marginBottom:14,transition:'border-color .2s'}}>
+    {scanning&&<div className="scan-line"/>}
+    <div style={{fontSize:'2.5rem',marginBottom:10,filter:scanning?'grayscale(.5)':'none'}}>{scanning?'🔍':'📤'}</div>
+    <div style={{fontWeight:700,fontSize:'.95rem',marginBottom:5}}>{scanning?progress:'Adaugă screenshot-uri'}</div>
+    <div style={{fontSize:'.78rem',color:'var(--muted)',lineHeight:1.6}}>{scanning?'AI-ul analizează bonul...':'Apasă sau trage fișierele\nJPG, PNG, PDF acceptate'}</div>
+    <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple onChange={e=>handleFiles(Array.from(e.target.files))} style={{display:'none'}}/>
+  </div>
+
+  {/* IMAGE PREVIEWS */}
+  {images.length>0&&(
+    <div style={{marginBottom:14}}>
+      <div style={{fontSize:'.65rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:8}}>{images.length} {images.length===1?'imagine adăugată':'imagini adăugate'}</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {images.map((img,i)=>(
+          <div key={i} style={{position:'relative',width:76,height:96,borderRadius:9,overflow:'hidden',border:'1px solid var(--border2)',flexShrink:0}}>
+            <img src={img.preview} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            <div style={{position:'absolute',top:0,left:0,right:0,background:'linear-gradient(to bottom,rgba(0,0,0,.6),transparent)',padding:'3px 5px',fontSize:'.58rem',color:'white',fontWeight:700}}>#{i+1}</div>
+            <button onClick={e=>{e.stopPropagation();setImages(prev=>prev.filter((_,j)=>j!==i));}}
+              style={{position:'absolute',bottom:3,right:3,width:18,height:18,borderRadius:'50%',background:'var(--red)',border:'none',color:'white',fontSize:'.65rem',cursor:'pointer',fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+          </div>
+        ))}
+        {!scanning&&(
+          <button onClick={()=>fileRef.current.click()} style={{width:76,height:96,borderRadius:9,border:'2px dashed var(--border2)',background:'transparent',color:'var(--muted)',fontSize:'1.3rem',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3}}>
+            <span>+</span><span style={{fontSize:'.55rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.5px'}}>Adaugă</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )}
+
+  {/* TIP */}
+  <div style={{background:'var(--bdim)',border:'1px solid rgba(56,189,248,.15)',borderRadius:10,padding:'10px 13px',marginBottom:12,display:'flex',gap:8,alignItems:'flex-start'}}>
+    <span style={{fontSize:'.95rem',flexShrink:0}}>💡</span>
+    <div style={{fontSize:'.76rem',color:'var(--text)',lineHeight:1.6}}>
+      <strong style={{color:'var(--blue)'}}>Bon lung?</strong> Adaugă toate screenshot-urile în ordine. AI-ul le combină automat într-un singur bon.
+    </div>
+  </div>
+
+  {error&&(
+    <div style={{background:'var(--rdim)',border:'1px solid rgba(255,77,77,.18)',borderRadius:10,padding:'10px 13px',marginBottom:12,fontSize:'.8rem',color:'var(--red)',lineHeight:1.5}}>
+      ⚠️ {error}
+    </div>
+  )}
+
+  <button onClick={analyze} disabled={scanning||!images.length}
+    style={{width:'100%',padding:'14px',borderRadius:12,border:'none',background:scanning||!images.length?'var(--muted2)':'var(--green)',color:scanning||!images.length?'var(--muted)':'var(--bg)',fontWeight:800,fontSize:'.95rem',cursor:scanning||!images.length?'default':'pointer',marginBottom:8,boxShadow:scanning||!images.length?'none':'0 0 18px var(--gglow)',transition:'all .2s'}}>
+    {scanning?'⏳ Se analizează...`':`🔍 Analizează ${images.length?images.length+' imagine'+(images.length>1?'i':''):'Bon'}`}
+  </button>
+
+  <button onClick={()=>onResult(DEMO_SLIP)} style={{width:'100%',padding:'11px',borderRadius:10,border:'1px solid var(--border2)',background:'transparent',color:'var(--muted)',fontWeight:500,fontSize:'.82rem',cursor:'pointer'}}>
+    Demo — testează cu bon exemplu
+  </button>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// SCAN RESULT
+// ════════════════════════════════════════════════════════
+
+function ScanResult({slip,onNew}){
+const [expanded,setExpanded]=useState(true);
+const conf=slip.confidence||0.9;
+const typeColor=BET_TYPE_COLOR[slip.betType]||‘var(–green)’;
+
+return(
+<div style={{padding:‘14px 14px 24px’}} className=“fade-up”>
+{/* CONFIDENCE */}
+<div style={{background:conf>.8?‘var(–gdim)’:conf>.6?‘var(–adim)’:‘var(–rdim)’,border:`1px solid ${conf>.8?'rgba(26,224,90,.2)':conf>.6?'rgba(245,166,35,.2)':'rgba(255,77,77,.2)'}`,borderRadius:12,padding:‘10px 13px’,marginBottom:12,display:‘flex’,gap:9,alignItems:‘center’}}>
+<span style={{fontSize:‘1rem’}}>{conf>.8?‘✅’:conf>.6?‘⚠️’:‘❌’}</span>
+<div>
+<div style={{fontSize:’.76rem’,fontWeight:700,color:conf>.8?‘var(–green)’:conf>.6?‘var(–amber)’:‘var(–red)’}}>Precizie extragere: {Math.round(conf*100)}%</div>
+<div style={{fontSize:’.68rem’,color:‘var(–muted)’,marginTop:2}}>{conf>.8?‘Toate câmpurile citite cu succes’:conf>.6?‘Verifică câmpurile marcate’:‘Imaginea nu era suficient de clară’}</div>
+</div>
+</div>
+
+```
+  {/* MAIN */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border2)',borderRadius:16,overflow:'hidden',marginBottom:10}}>
+    {/* HEADER */}
+    <div style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',gap:9,alignItems:'center'}}>
+        <span style={{fontSize:'1.3rem'}}>{BM_ICON[slip.bookmaker]||'📋'}</span>
+        <div>
+          <div style={{fontWeight:800,fontSize:'.95rem'}}>{slip.bookmaker||'Necunoscut'}</div>
+          <div style={{fontSize:'.68rem',color:'var(--muted)',marginTop:1}}>{slip.date||'—'}</div>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {slip.isFreebet&&<span style={{background:'var(--pdim)',border:'1px solid rgba(192,132,252,.2)',borderRadius:6,padding:'3px 8px',fontSize:'.65rem',fontWeight:700,color:'var(--purple)'}}>FREEBET</span>}
+        <span style={{background:typeColor+'18',border:`1px solid ${typeColor}28`,borderRadius:7,padding:'3px 9px',fontSize:'.72rem',fontWeight:700,color:typeColor}}>{slip.betType}</span>
+      </div>
+    </div>
+
+    {/* FINANCIALS */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',borderBottom:'1px solid var(--border)'}}>
+      {[
+        {l:'Miză',v:slip.stake!=null?slip.stake+' RON':'—',c:'var(--text)'},
+        {l:'Cotă',v:slip.totalOdds!=null?'×'+slip.totalOdds:'—',c:'var(--amber)'},
+        {l:'Câștig',v:slip.potentialWin!=null?slip.potentialWin+' RON':'—',c:'var(--green)'},
+      ].map((f,i)=>(
+        <div key={i} style={{padding:'12px',textAlign:'center',borderRight:i<2?'1px solid var(--border)':'none'}}>
+          <div style={{fontSize:'.58rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.8px',marginBottom:4}}>{f.l}</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'.9rem',color:f.c,fontWeight:500}}>{f.v}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* SELECTIONS */}
+    <div style={{padding:'13px 15px'}}>
+      <button onClick={()=>setExpanded(!expanded)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'100%',background:'none',border:'none',cursor:'pointer',marginBottom:expanded?10:0,padding:0}}>
+        <span style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700}}>{slip.selections?.length||0} Selecții</span>
+        <span style={{color:'var(--green)',fontSize:'.8rem'}}>{expanded?'▲':'▼'}</span>
+      </button>
+      {expanded&&slip.selections?.map((s,i)=>(
+        <div key={i} style={{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:9,padding:'10px 12px',marginBottom:6,borderLeft:`3px solid ${s.status==='won'?'var(--green)':s.status==='lost'?'var(--red)':'var(--border2)'}`}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:5}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:'.78rem',fontWeight:700,color:'var(--text)',marginBottom:2}}>{s.match||'—'}</div>
+              <div style={{fontSize:'.68rem',color:'var(--muted)'}}>{s.market||'—'}</div>
+            </div>
+            {s.odds&&<span style={{fontFamily:'var(--mono)',fontSize:'.82rem',color:'var(--amber)',marginLeft:8,flexShrink:0}}>×{s.odds}</span>}
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{background:'rgba(26,224,90,.08)',border:'1px solid rgba(26,224,90,.15)',borderRadius:5,padding:'2px 8px',fontSize:'.7rem',color:'var(--green)',fontWeight:600}}>{s.pick||'—'}</span>
+            <div style={{display:'flex',gap:5}}>
+              {s.sport&&<span style={{fontSize:'.62rem',color:'var(--muted)',background:'var(--bg2)',borderRadius:4,padding:'2px 5px'}}>{s.sport}</span>}
+              {s.status&&s.status!=='pending'&&<span style={{fontSize:'.68rem',fontWeight:700,color:s.status==='won'?'var(--green)':'var(--red)'}}>{s.status==='won'?'✓':'✗'}</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {slip.notes&&(
+    <div style={{background:'var(--adim)',border:'1px solid rgba(245,166,35,.15)',borderRadius:10,padding:'10px 13px',marginBottom:10,fontSize:'.78rem',color:'var(--text)',lineHeight:1.6}}>
+      <strong style={{color:'var(--amber)'}}>Note: </strong>{slip.notes}
+    </div>
+  )}
+
+  {/* SOURCE IMAGES */}
+  {slip.images?.length>0&&(
+    <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:12,marginBottom:10}}>
+      <div style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:8}}>Screenshots originale</div>
+      <div style={{display:'flex',gap:7,overflowX:'auto'}}>
+        {slip.images.map((img,i)=>(
+          <img key={i} src={img} alt="" style={{height:100,width:'auto',borderRadius:7,border:'1px solid var(--border2)',flexShrink:0,objectFit:'cover'}}/>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <div style={{background:'var(--gdim)',border:'1px solid rgba(26,224,90,.18)',borderRadius:10,padding:'10px 13px',marginBottom:10,fontSize:'.76rem',color:'var(--muted)',display:'flex',gap:7,alignItems:'center'}}>
+    <span>✅</span><span>Bonul a fost adăugat automat în <strong style={{color:'var(--text)'}}>tab-ul Profit</strong> pentru tracking.</span>
+  </div>
+
+  <button onClick={onNew} style={{width:'100%',padding:'13px',borderRadius:11,border:'none',background:'var(--green)',color:'var(--bg)',fontWeight:800,fontSize:'.92rem',cursor:'pointer',boxShadow:'0 0 16px var(--gglow)'}}>
+    + Scanează Alt Bon
+  </button>
+</div>
+```
+
+);
+}
+
+// ════════════════════════════════════════════════════════
+// PROFILE TAB
+// ════════════════════════════════════════════════════════
+
+function ProfileTab(){
+const days=6;
+return(
+<div style={{padding:‘14px 14px 24px’}}>
+{/* TRIAL CARD */}
+<div style={{background:‘linear-gradient(135deg,var(–card3),var(–card2))’,border:‘1px solid var(–border2)’,borderRadius:16,padding:‘20px’,marginBottom:12,textAlign:‘center’,position:‘relative’,overflow:‘hidden’}}>
+<div style={{position:‘absolute’,inset:0,background:‘radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,224,90,.06) 0%,transparent 70%)’,pointerEvents:‘none’}}/>
+<div style={{width:56,height:56,borderRadius:‘50%’,background:‘var(–gdim)’,border:‘2px solid rgba(26,224,90,.3)’,margin:‘0 auto 12px’,display:‘flex’,alignItems:‘center’,justifyContent:‘center’,fontSize:‘1.5rem’}}>👤</div>
+<div style={{fontWeight:800,fontSize:‘1.05rem’,marginBottom:4}}>Cont Trial</div>
+<div style={{fontSize:’.78rem’,color:‘var(–muted)’,marginBottom:14}}>
+<span style={{color:‘var(–amber)’,fontWeight:700}}>{days} zile</span> rămase din trial gratuit
+</div>
+<div style={{background:‘var(–border)’,borderRadius:99,height:5,overflow:‘hidden’,marginBottom:16}}>
+<div style={{height:‘100%’,background:‘linear-gradient(90deg,var(–amber),var(–amber)88)’,borderRadius:99,width:`${(days/7)*100}%`,transition:‘width .4s’}}/>
+</div>
+<button style={{width:‘100%’,background:‘var(–green)’,color:‘var(–bg)’,border:‘none’,borderRadius:11,padding:‘13px’,fontWeight:800,fontSize:’.92rem’,cursor:‘pointer’,boxShadow:‘0 0 20px var(–gglow)’,animation:‘pulseGreen 2.5s infinite’}}>
+Activează Abonament — 39 RON/lună
+</button>
+<div style={{fontSize:’.68rem’,color:‘var(–muted)’,marginTop:8}}>Anulare oricând · Fără contract · Acces imediat</div>
+</div>
+
+```
+  {/* INCLUDES */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:14,marginBottom:10}}>
+    <div style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:10}}>Cu abonamentul activ</div>
+    {[
+      {i:'🎯',t:'Oferte actualizate zilnic manual'},
+      {i:'🔔',t:'Alerte instant oferte noi pe Telegram'},
+      {i:'🧮',t:'Calculator nelimitat + ghiduri complete'},
+      {i:'📸',t:'Scanner AI bonuri — nelimitat'},
+      {i:'📊',t:'Tracker profit + statistici avansate'},
+      {i:'📚',t:'Curs complet 8 module inclus'},
+      {i:'💬',t:'Grup privat + suport direct'},
+    ].map((it,i,arr)=>(
+      <div key={i} style={{display:'flex',gap:9,alignItems:'center',padding:'8px 0',borderBottom:i<arr.length-1?'1px solid var(--border)':'none'}}>
+        <span style={{fontSize:'.95rem'}}>{it.i}</span>
+        <span style={{fontSize:'.82rem',color:'var(--text)',flex:1}}>{it.t}</span>
+        <span style={{color:'var(--green)',fontSize:'.8rem'}}>✓</span>
+      </div>
+    ))}
+  </div>
+
+  {/* NOTIF SETTINGS */}
+  <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:14}}>
+    <div style={{fontSize:'.62rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700,marginBottom:10}}>Setări Notificări</div>
+    {[
+      {l:'Oferte noi',d:'Alertă imediată',on:true},
+      {l:'Oferte care expiră',d:'Reamintire 24h înainte',on:true},
+      {l:'Newsletter săptămânal',d:'Rezumat strategii',on:false},
+    ].map((it,i)=>(
+      <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<2?'1px solid var(--border)':'none'}}>
+        <div>
+          <div style={{fontSize:'.82rem',color:'var(--text)',fontWeight:500}}>{it.l}</div>
+          <div style={{fontSize:'.68rem',color:'var(--muted)',marginTop:1}}>{it.d}</div>
+        </div>
+        <div style={{width:38,height:20,borderRadius:99,background:it.on?'var(--green)':'var(--border2)',position:'relative',cursor:'pointer',transition:'background .2s',flexShrink:0}}>
+          <div style={{position:'absolute',top:2,left:it.on?18:2,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+```
+
+);
+}
+
+ReactDOM.render(<App/>,document.getElementById(‘root’));
+</script>
+
+</body>
+</html>
