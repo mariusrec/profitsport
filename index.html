@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ProfitSport — Matched Betting Romania</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -18,7 +18,6 @@
   --red:#FF4D4D;--rdim:rgba(255,77,77,0.10);
   --blue:#38BDF8;--bdim:rgba(56,189,248,0.10);
   --purple:#C084FC;--pdim:rgba(192,132,252,0.10);
-  --teal:#2DD4BF;
   --text:#D4E8D4;--muted:#4E6850;--muted2:#364E38;
   --font:'Figtree',sans-serif;--mono:'DM Mono',monospace;
 }
@@ -26,61 +25,40 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 button,input,select,textarea{font-family:var(--font);color:var(--text);}
 input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 10px;outline:none;font-size:.9rem;width:100%;}
 select option{background:var(--bg3);}
-::-webkit-scrollbar{width:2px;height:2px;}
-::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar{width:2px;}
 ::-webkit-scrollbar-thumb{background:var(--border3);border-radius:2px;}
 #app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;}
-/* TOP BAR */
 #topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;position:relative;z-index:50;}
 .logo{display:flex;align-items:center;gap:8px;}
 .logo-icon{width:24px;height:24px;background:var(--green);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#08100A;font-weight:900;}
 .logo-text{font-weight:900;font-size:.98rem;letter-spacing:-.5px;}
 .logo-text span{color:var(--green);}
-.trial-badge{background:var(--gdim);border:1px solid rgba(26,224,90,.15);color:var(--green);font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.8px;text-transform:uppercase;}
+.badge{background:var(--gdim);border:1px solid rgba(26,224,90,.15);color:var(--green);font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.8px;text-transform:uppercase;}
 .top-right{display:flex;align-items:center;gap:10px;}
 .profit-pill{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:.78rem;color:var(--green);}
 .notif-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px;position:relative;}
 .notif-badge{position:absolute;top:0;right:0;width:13px;height:13px;background:var(--red);border-radius:99px;font-size:.55rem;font-weight:800;color:white;display:flex;align-items:center;justify-content:center;}
-/* CONTENT */
 #content{flex:1;overflow-y:auto;overflow-x:hidden;}
-/* BOTTOM NAV */
 #bottomnav{height:60px;background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--muted);transition:color .15s;padding:6px 0;position:relative;}
 .nav-btn.active{color:var(--green);}
 .nav-btn.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--green);border-radius:1px;}
 .nav-icon{font-size:1.1rem;transition:font-size .15s;}
 .nav-btn.active .nav-icon{font-size:1.25rem;}
-.nav-label{font-size:.6rem;font-weight:400;letter-spacing:.2px;}
+.nav-label{font-size:.6rem;font-weight:400;}
 .nav-btn.active .nav-label{font-weight:700;}
-/* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;}
-.card2{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:14px;}
-/* SECTION LABEL */
 .sec-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;}
-/* CHIP */
 .chip{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:.65rem;color:var(--muted);}
-/* PROFIT PILL */
 .profit-tag{background:var(--gdim);border:1px solid rgba(26,224,90,.18);border-radius:8px;padding:4px 9px;font-family:var(--mono);font-size:.78rem;color:var(--green);}
-/* FILTER CHIPS */
 .filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;}
 .filter-row::-webkit-scrollbar{display:none;}
 .filter-chip{flex-shrink:0;padding:5px 13px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);}
 .filter-chip.active{border-color:var(--green);background:var(--gdim);color:var(--green);}
-/* OFFER CARD */
-.offer-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:9px;cursor:pointer;width:100%;text-align:left;font-family:var(--font);transition:border-color .15s;}
-.offer-card:hover{border-color:var(--border3);}
-.offer-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.offer-bm-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
-.offer-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.offer-footer{display:flex;align-items:center;gap:6px;}
-.offer-progress{flex:1;height:3px;background:var(--border);border-radius:99px;overflow:hidden;}
-.offer-progress-bar{height:100%;border-radius:99px;}
-/* STEP DOTS */
-.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
+.offer-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:9px;cursor:pointer;width:100%;text-align:left;font-family:var(--font);}
 .step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);background:transparent;color:var(--muted);font-weight:900;font-size:.78rem;cursor:pointer;transition:all .2s;font-family:var(--font);}
 .step-dot.active{border-color:var(--green);background:var(--gdim);color:var(--green);}
 .step-dot.done{border-color:var(--green);background:var(--green);color:var(--bg);}
-/* CALC */
 .calc-type-row{display:flex;gap:4px;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:14px;}
 .calc-type-btn{flex:1;padding:7px 4px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-weight:400;font-size:.72rem;cursor:pointer;transition:all .15s;font-family:var(--font);}
 .calc-type-btn.active{background:var(--card3);color:var(--green);font-weight:700;}
@@ -88,142 +66,108 @@ select option{background:var(--bg3);}
 .field{flex:1;}
 .field label{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:700;}
 .field input{font-family:var(--mono);font-size:.95rem;}
-.result-box{background:var(--gdim);border:1px solid rgba(26,224,90,.2);border-radius:10px;padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-.result-main{font-family:var(--mono);font-size:1.6rem;color:var(--green);line-height:1;}
-.result-main span{font-size:1rem;opacity:.7;}
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.result-cell{background:var(--bg3);border-radius:8px;padding:11px;text-align:center;}
-.result-cell-label{font-size:.62rem;color:var(--muted);margin-bottom:5px;line-height:1.3;}
-.result-cell-val{font-family:var(--mono);font-size:.95rem;font-weight:500;}
-/* TRACKER */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
 .stat-cell{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center;}
-.bm-bar-row{margin-bottom:9px;}
-.bm-bar-track{background:var(--border);border-radius:99px;height:3px;overflow:hidden;margin-top:3px;}
-.bm-bar-fill{height:100%;border-radius:99px;transition:width .5s ease;}
 .bet-row{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
-/* SCANNER */
 .drop-zone{border:2px dashed var(--border2);border-radius:16px;padding:28px 20px;text-align:center;cursor:pointer;background:var(--card);position:relative;overflow:hidden;margin-bottom:14px;}
-.preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
 .preview-item{position:relative;width:76px;height:96px;border-radius:9px;overflow:hidden;border:1px solid var(--border2);flex-shrink:0;}
 .preview-item img{width:100%;height:100%;object-fit:cover;}
-.preview-num{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);padding:3px 5px;font-size:.58rem;color:white;font-weight:700;}
-.preview-del{position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--red);border:none;color:white;font-size:.65rem;cursor:pointer;font-weight:900;display:flex;align-items:center;justify-content:center;}
-/* SCAN LINE */
-.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);box-shadow:0 0 10px var(--green);pointer-events:none;animation:scanMove 2s ease-in-out infinite;}
-@keyframes scanMove{0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
-/* RESULT */
-.slip-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-.financials{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);}
-.fin-cell{padding:12px;text-align:center;}
-.fin-cell:not(:last-child){border-right:1px solid var(--border);}
-.sel-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:6px;}
-/* PROFILE */
+.progress-track{background:var(--border);border-radius:99px;height:5px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green2));border-radius:99px;transition:width .4s ease;}
+.hint-box{border-radius:10px;padding:10px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;}
+.form-row{display:flex;gap:8px;margin-bottom:8px;}
+.btn-primary{background:var(--green);color:var(--bg);border:none;border-radius:10px;padding:13px;font-weight:800;font-size:.9rem;cursor:pointer;width:100%;font-family:var(--font);}
+.btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:10px;padding:13px;font-weight:600;font-size:.9rem;cursor:pointer;width:100%;font-family:var(--font);}
 .toggle-switch{width:38px;height:20px;border-radius:99px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
 .toggle-knob{position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:white;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
-/* NOTIF PANEL */
 #notif-panel{position:absolute;top:52px;right:0;left:0;z-index:100;display:none;}
 #notif-panel.open{display:block;}
 .notif-inner{position:absolute;right:12px;top:4px;width:290px;background:var(--card3);border:1px solid var(--border3);border-radius:14px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.6);}
-/* BUTTONS */
-.btn-primary{background:var(--green);color:var(--bg);border:none;border-radius:10px;padding:13px;font-weight:800;font-size:.9rem;cursor:pointer;width:100%;font-family:var(--font);}
-.btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:10px;padding:13px;font-weight:600;font-size:.9rem;cursor:pointer;width:100%;font-family:var(--font);}
-.btn-back{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:5px;margin-bottom:14px;font-family:var(--font);padding:0;}
-/* PROGRESS BAR */
-.progress-track{background:var(--border);border-radius:99px;height:5px;overflow:hidden;}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green2));border-radius:99px;transition:width .4s ease;}
-/* HINT BOX */
-.hint-box{border-radius:10px;padding:10px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;}
-/* FORM */
-.form-row{display:flex;gap:8px;margin-bottom:8px;}
-/* FADE UP */
+.glow{box-shadow:0 0 18px var(--gglow);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .fade-up{animation:fadeUp .2s ease both;}
-/* GLOW */
-.glow{box-shadow:0 0 18px var(--gglow);}
-/* SCAN LOADING */
+@keyframes scanMove{0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);box-shadow:0 0 10px var(--green);pointer-events:none;animation:scanMove 2s ease-in-out infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinning{display:inline-block;animation:spin 1s linear infinite;}
+
+/* AUTH SCREEN */
+.auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg);}
+.auth-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:28px 24px;width:100%;max-width:380px;}
+.auth-logo{text-align:center;margin-bottom:28px;}
+.auth-logo .logo-icon{width:48px;height:48px;border-radius:12px;font-size:22px;margin:0 auto 12px;}
+.auth-logo .logo-text{font-size:1.4rem;}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:20px;}
+.auth-tab{flex:1;padding:8px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-weight:600;font-size:.85rem;cursor:pointer;transition:all .15s;font-family:var(--font);}
+.auth-tab.active{background:var(--card2);color:var(--green);}
+.auth-field{margin-bottom:14px;}
+.auth-field label{display:block;font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.auth-field input{width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s;}
+.auth-field input:focus{border-color:var(--green);}
+.auth-btn{width:100%;padding:14px;background:var(--green);color:var(--bg);border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;font-family:var(--font);box-shadow:0 0 20px var(--gglow);margin-top:4px;}
+.auth-error{background:var(--rdim);border:1px solid rgba(255,77,77,.2);border-radius:8px;padding:10px 13px;font-size:.8rem;color:var(--red);margin-bottom:12px;line-height:1.5;}
+.auth-loading{text-align:center;color:var(--muted);font-size:.85rem;padding:8px;}
+
+/* BM BALANCE CARD */
+.bm-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.bm-balance-input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-family:var(--mono);font-size:.9rem;color:var(--green);width:110px;text-align:right;outline:none;}
+.bm-balance-input:focus{border-color:var(--green);}
+
+/* LOADING SPINNER */
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;}
+.loading-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);flex-direction:column;gap:16px;}
+.loading-screen .logo-icon{width:48px;height:48px;border-radius:12px;font-size:22px;display:flex;align-items:center;justify-content:center;background:var(--green);color:var(--bg);font-weight:900;}
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="topbar">
-    <div class="logo">
-      <div id="back-btn" style="display:none;cursor:pointer;color:var(--muted);font-size:1rem;padding-right:8px;" onclick="goBack()">←</div>
-      <div class="logo-icon">⚡</div>
-      <div class="logo-text">Profit<span>Sport</span></div>
-      <div class="trial-badge">TRIAL</div>
-    </div>
-    <div class="top-right">
-      <div class="profit-pill" id="total-profit-display">+258 RON</div>
-      <button class="notif-btn" onclick="toggleNotif()">
-        🔔
-        <div class="notif-badge" id="notif-count">2</div>
-      </button>
-    </div>
-  </div>
 
-  <div id="notif-panel">
-    <div class="notif-inner">
-      <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-weight:700;font-size:.82rem;">Notificări</span>
-        <button onclick="toggleNotif()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;">×</button>
-      </div>
-      <div id="notif-list"></div>
-    </div>
-  </div>
-
-  <div id="content"></div>
-
-  <div id="bottomnav">
-    <button class="nav-btn active" onclick="navigate('offers')" id="nav-offers">
-      <span class="nav-icon">🎯</span><span class="nav-label">Oferte</span>
-    </button>
-    <button class="nav-btn" onclick="navigate('calc')" id="nav-calc">
-      <span class="nav-icon">🧮</span><span class="nav-label">Calc</span>
-    </button>
-    <button class="nav-btn" onclick="navigate('scan')" id="nav-scan">
-      <span class="nav-icon">📸</span><span class="nav-label">Scanner</span>
-    </button>
-    <button class="nav-btn" onclick="navigate('tracker')" id="nav-tracker">
-      <span class="nav-icon">📊</span><span class="nav-label">Profit</span>
-    </button>
-    <button class="nav-btn" onclick="navigate('profile')" id="nav-profile">
-      <span class="nav-icon">👤</span><span class="nav-label">Cont</span>
-    </button>
-  </div>
-</div>
+<div id="root"></div>
 
 <script>
+// ═══════════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://sdxatzrrgpuikxlzenwg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkeGF0enJyZ3B1aWt4bHplbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjAwMTcsImV4cCI6MjA4OTE5NjAxN30.PiKMcRDkFJCgYrdhQdIOnmfDWIgNvQ5fHE3Lts0q_vc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
 const state = {
+  user: null,
+  loading: true,
   tab: 'offers',
-  offerGuide: null, // {offer, step, done:[]}
-  scanView: 'upload', // upload | result
+  offerGuide: null,
+  scanView: 'upload',
   scanResult: null,
-  scanImages: [], // [{preview, base64, type}]
+  scanImages: [],
   scanning: false,
+  scanProgress: '',
+  scanError: '',
   calcType: 'SNR',
+  calcBS:'50', calcBO:'4.50', calcLO:'4.60', calcCom:'5',
   showAddBet: false,
-  notifOpen: false,
   offerFilter: 'ALL',
-  bets: [
-    {id:1,date:"10.03.25",bm:"Superbet",type:"Freebet SNR",match:"Man City vs Arsenal",back:4.50,lay:4.60,stake:50,profit:34.20,status:"won"},
-    {id:2,date:"11.03.25",bm:"Betano",type:"Qualifier",match:"Bayern vs PSG",back:2.10,lay:2.14,stake:100,profit:-4.50,status:"lost"},
-    {id:3,date:"11.03.25",bm:"Betano",type:"Freebet SNR",match:"Bayern vs PSG",back:4.20,lay:4.30,stake:175,profit:121.50,status:"won"},
-    {id:4,date:"12.03.25",bm:"Unibet",type:"Freebet SNR",match:"Real Madrid vs Atlético",back:5.00,lay:5.10,stake:75,profit:51.80,status:"won"},
-    {id:5,date:"13.03.25",bm:"Fortuna",type:"Cashback",match:"Liverpool vs Chelsea",back:1.90,lay:1.93,stake:200,profit:22.00,status:"won"},
-    {id:6,date:"14.03.25",bm:"MaxBet",type:"Reload",match:"Juventus vs Inter",back:3.80,lay:3.90,stake:100,profit:33.10,status:"won"},
-  ],
+  bets: [],
+  bookmakers: [],
+  betsLoading: false,
   notifications: [
     {id:1,text:"Ofertă nouă: Superbet Enhanced Odds CL",time:"2 min",read:false},
     {id:2,text:"Reamintire: Unibet Friday expiră în 8 ore",time:"1 oră",read:false},
-    {id:3,text:"TotoGaming: Turneul săptămânal a început",time:"3 ore",read:true},
   ],
+  notifOpen: false,
+  authMode: 'login', // login | signup
+  authEmail: '', authPassword: '', authLoading: false, authError: '',
 };
+
+const DEFAULT_BOOKMAKERS = [
+  {name:'Superbet',balance:0,currency:'RON'},
+  {name:'Betano',balance:0,currency:'RON'},
+  {name:'Unibet',balance:0,currency:'RON'},
+  {name:'Fortuna',balance:0,currency:'RON'},
+  {name:'MaxBet',balance:0,currency:'RON'},
+  {name:'Betfair',balance:0,currency:'RON'},
+];
 
 const OFFERS = [
   {id:1,bm:"Superbet",type:"FREEBET",badge:"🔥 HOT",title:"4 × 50 RON Freebets",value:200,profit:"~145 RON",expiry:"3 zile",minOdds:1.70,sport:"Sport",color:"#FF4D4D",
@@ -275,156 +219,264 @@ const OFFERS = [
   ]},
 ];
 
-const BM_ICON = {Superbet:"🔴",Betano:"🟡",Unibet:"🔵",Fortuna:"🟢",MaxBet:"🟠",TotoGaming:"🟣"};
+const BM_ICON = {Superbet:"🔴",Betano:"🟡",Unibet:"🔵",Fortuna:"🟢",MaxBet:"🟠",TotoGaming:"🟣",Betfair:"🏦"};
 
 // ═══════════════════════════════════════════════
-// RENDER ENGINE
+// SUPABASE HELPERS
+// ═══════════════════════════════════════════════
+async function loadBets() {
+  if (!state.user) return;
+  const {data} = await sb.from('bets').select('*').eq('user_id', state.user.id).order('created_at', {ascending:false});
+  if (data) state.bets = data.map(b => ({...b, bm: b.bookmaker, back: b.back_odds, lay: b.lay_odds, fromScan: b.from_scan}));
+}
+
+async function loadBookmakers() {
+  if (!state.user) return;
+  const {data} = await sb.from('bookmakers').select('*').eq('user_id', state.user.id).order('created_at');
+  if (data && data.length > 0) {
+    state.bookmakers = data;
+  } else {
+    // create default bookmakers for new user
+    const toInsert = DEFAULT_BOOKMAKERS.map(bm => ({...bm, user_id: state.user.id}));
+    const {data: created} = await sb.from('bookmakers').insert(toInsert).select();
+    if (created) state.bookmakers = created;
+  }
+}
+
+async function saveBet(bet) {
+  const {data} = await sb.from('bets').insert({
+    user_id: state.user.id,
+    bookmaker: bet.bm,
+    type: bet.type,
+    match: bet.match,
+    back_odds: parseFloat(bet.back)||0,
+    lay_odds: parseFloat(bet.lay)||0,
+    stake: parseFloat(bet.stake)||0,
+    profit: parseFloat(bet.profit)||0,
+    status: parseFloat(bet.profit) > 0 ? 'won' : parseFloat(bet.profit) < 0 ? 'lost' : 'pending',
+    date: new Date().toLocaleDateString('ro'),
+    from_scan: bet.fromScan || false,
+  }).select().single();
+  if (data) state.bets.unshift({...data, bm: data.bookmaker, back: data.back_odds, lay: data.lay_odds, fromScan: data.from_scan});
+}
+
+async function updateBookmakerBalance(id, balance) {
+  await sb.from('bookmakers').update({balance: parseFloat(balance)||0}).eq('id', id);
+  const bm = state.bookmakers.find(b => b.id === id);
+  if (bm) bm.balance = parseFloat(balance)||0;
+}
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+async function signUp(email, password) {
+  state.authLoading = true; state.authError = ''; render();
+  const {error} = await sb.auth.signUp({email, password});
+  state.authLoading = false;
+  if (error) { state.authError = error.message; render(); return; }
+  state.authError = ''; 
+  // show success
+  state.authError = '✅ Cont creat! Verifică email-ul și apasă linkul de confirmare.';
+  render();
+}
+
+async function signIn(email, password) {
+  state.authLoading = true; state.authError = ''; render();
+  const {data, error} = await sb.auth.signInWithPassword({email, password});
+  state.authLoading = false;
+  if (error) { state.authError = error.message; render(); return; }
+  state.user = data.user;
+  await loadBets();
+  await loadBookmakers();
+  render();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  state.user = null;
+  state.bets = [];
+  state.bookmakers = [];
+  render();
+}
+
+// ═══════════════════════════════════════════════
+// RENDER
 // ═══════════════════════════════════════════════
 function render() {
-  updateTopBar();
-  updateNotifPanel();
-  const content = document.getElementById('content');
-  content.innerHTML = '';
-
-  if (state.tab === 'offers') {
-    if (state.offerGuide) {
-      document.getElementById('back-btn').style.display = 'block';
-      content.innerHTML = renderOfferGuide();
-    } else {
-      document.getElementById('back-btn').style.display = 'none';
-      content.innerHTML = renderOffers();
-    }
-  } else if (state.tab === 'calc') {
-    document.getElementById('back-btn').style.display = 'none';
-    content.innerHTML = renderCalc();
-    bindCalc();
-  } else if (state.tab === 'tracker') {
-    document.getElementById('back-btn').style.display = 'none';
-    content.innerHTML = renderTracker();
-    bindTracker();
-  } else if (state.tab === 'scan') {
-    document.getElementById('back-btn').style.display = 'none';
-    if (state.scanView === 'result' && state.scanResult) {
-      content.innerHTML = renderScanResult();
-    } else {
-      content.innerHTML = renderScan();
-      bindScan();
-    }
-  } else if (state.tab === 'profile') {
-    document.getElementById('back-btn').style.display = 'none';
-    content.innerHTML = renderProfile();
-  }
-
-  // update nav
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + state.tab);
-  if (navEl) navEl.classList.add('active');
-}
-
-function updateTopBar() {
-  const total = state.bets.reduce((s,b) => s + b.profit, 0);
-  document.getElementById('total-profit-display').textContent = (total >= 0 ? '+' : '') + total.toFixed(0) + ' RON';
-  const unread = state.notifications.filter(n => !n.read).length;
-  const badge = document.getElementById('notif-count');
-  badge.textContent = unread;
-  badge.style.display = unread > 0 ? 'flex' : 'none';
-}
-
-function updateNotifPanel() {
-  const list = document.getElementById('notif-list');
-  list.innerHTML = state.notifications.map(n => `
-    <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start;background:${n.read?'transparent':'rgba(26,224,90,.03)'}">
-      <div style="width:5px;height:5px;border-radius:50%;background:${n.read?'var(--muted2)':'var(--green)'};margin-top:5px;flex-shrink:0;"></div>
-      <div>
-        <div style="font-size:.78rem;color:var(--text);line-height:1.4;">${n.text}</div>
-        <div style="font-size:.68rem;color:var(--muted);margin-top:3px;">${n.time} în urmă</div>
+  const root = document.getElementById('root');
+  if (state.loading) { root.innerHTML = renderLoading(); return; }
+  if (!state.user) { root.innerHTML = renderAuth(); bindAuth(); return; }
+  root.innerHTML = `
+    <div id="app">
+      <div id="topbar">
+        <div class="logo">
+          <div id="back-btn" style="display:${state.offerGuide||state.scanView==='result'?'block':'none'};cursor:pointer;color:var(--muted);font-size:1rem;padding-right:8px;" onclick="goBack()">←</div>
+          <div class="logo-icon">⚡</div>
+          <div class="logo-text">Profit<span>Sport</span></div>
+          <div class="badge">TRIAL</div>
+        </div>
+        <div class="top-right">
+          <div class="profit-pill">${totalProfit() >= 0 ? '+' : ''}${totalProfit().toFixed(0)} RON</div>
+          <button class="notif-btn" onclick="toggleNotif()">🔔<div class="notif-badge" style="display:${state.notifications.filter(n=>!n.read).length>0?'flex':'none'}">${state.notifications.filter(n=>!n.read).length}</div></button>
+        </div>
+      </div>
+      <div id="notif-panel" class="${state.notifOpen?'open':''}">
+        <div class="notif-inner">
+          <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:.82rem;">Notificări</span>
+            <button onclick="toggleNotif()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;">×</button>
+          </div>
+          ${state.notifications.map(n=>`
+            <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;background:${n.read?'transparent':'rgba(26,224,90,.03)'}">
+              <div style="width:5px;height:5px;border-radius:50%;background:${n.read?'var(--muted2)':'var(--green)'};margin-top:5px;flex-shrink:0;"></div>
+              <div><div style="font-size:.78rem;line-height:1.4;">${n.text}</div><div style="font-size:.68rem;color:var(--muted);margin-top:3px;">${n.time} în urmă</div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div id="content">${renderContent()}</div>
+      <div id="bottomnav">
+        ${[['offers','🎯','Oferte'],['calc','🧮','Calc'],['scan','📸','Scanner'],['tracker','📊','Profit'],['profile','👤','Cont']].map(([id,icon,label])=>`
+          <button class="nav-btn ${state.tab===id?'active':''}" onclick="navigate('${id}')">
+            <span class="nav-icon">${icon}</span><span class="nav-label">${label}</span>
+          </button>
+        `).join('')}
       </div>
     </div>
-  `).join('');
+  `;
+  bindContent();
+}
+
+function renderLoading() {
+  return `<div class="loading-screen"><div class="logo-icon" style="width:48px;height:48px;border-radius:12px;font-size:22px;display:flex;align-items:center;justify-content:center;background:var(--green);color:var(--bg);">⚡</div><div class="spinner"></div></div>`;
+}
+
+function totalProfit() { return state.bets.reduce((s,b) => s + (parseFloat(b.profit)||0), 0); }
+
+function renderContent() {
+  if (state.tab === 'offers') return state.offerGuide ? renderOfferGuide() : renderOffers();
+  if (state.tab === 'calc') return renderCalc();
+  if (state.tab === 'tracker') return renderTracker();
+  if (state.tab === 'scan') return state.scanView === 'result' ? renderScanResult() : renderScan();
+  if (state.tab === 'profile') return renderProfile();
+  return '';
+}
+
+function bindContent() {
+  if (state.tab === 'calc') bindCalc();
+  if (state.tab === 'scan' && state.scanView !== 'result') bindScan();
+  if (state.tab === 'profile') bindBalances();
+  document.addEventListener('click', outsideNotif, {once:true});
+}
+
+function outsideNotif(e) {
+  const panel = document.getElementById('notif-panel');
+  if (panel && state.notifOpen && !panel.contains(e.target) && !e.target.closest('.notif-btn')) {
+    state.notifOpen = false; render();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// AUTH SCREEN
+// ═══════════════════════════════════════════════
+function renderAuth() {
+  return `
+    <div class="auth-screen">
+      <div class="auth-card fade-up">
+        <div class="auth-logo">
+          <div class="logo-icon" style="width:48px;height:48px;border-radius:12px;font-size:22px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;">⚡</div>
+          <div class="logo-text" style="font-size:1.4rem;text-align:center;">Profit<span>Sport</span></div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:6px;">Matched Betting Romania</div>
+        </div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab ${state.authMode==='login'?'active':''}" onclick="setAuthMode('login')">Intră în cont</button>
+          <button class="auth-tab ${state.authMode==='signup'?'active':''}" onclick="setAuthMode('signup')">Cont nou</button>
+        </div>
+
+        ${state.authError ? `<div class="auth-error">${state.authError}</div>` : ''}
+
+        <div class="auth-field">
+          <label>Email</label>
+          <input id="auth-email" type="email" placeholder="email@exemplu.com" value="${state.authEmail}" oninput="state.authEmail=this.value">
+        </div>
+        <div class="auth-field">
+          <label>Parolă</label>
+          <input id="auth-pass" type="password" placeholder="Minim 6 caractere" value="${state.authPassword}" oninput="state.authPassword=this.value">
+        </div>
+
+        ${state.authLoading
+          ? `<div class="auth-loading"><div class="spinner" style="margin:0 auto;display:block;"></div></div>`
+          : `<button class="auth-btn" onclick="handleAuth()">${state.authMode==='login'?'Intră în cont →':'Creează cont gratuit →'}</button>`
+        }
+
+        <div style="text-align:center;margin-top:16px;font-size:.75rem;color:var(--muted);line-height:1.6;">
+          ${state.authMode==='login'?'Nu ai cont? <button onclick="setAuthMode(\'signup\')" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:.75rem;font-family:var(--font);">Înregistrează-te gratuit</button>':'Ai deja cont? <button onclick="setAuthMode(\'login\')" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:.75rem;font-family:var(--font);">Intră în cont</button>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function bindAuth() {
+  const emailEl = document.getElementById('auth-email');
+  const passEl = document.getElementById('auth-pass');
+  if (emailEl) emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuth(); });
+  if (passEl) passEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuth(); });
+}
+
+function setAuthMode(mode) { state.authMode = mode; state.authError = ''; render(); }
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email')?.value || state.authEmail;
+  const pass = document.getElementById('auth-pass')?.value || state.authPassword;
+  if (!email || !pass) { state.authError = 'Completează email-ul și parola.'; render(); return; }
+  if (state.authMode === 'login') await signIn(email, pass);
+  else await signUp(email, pass);
 }
 
 // ═══════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════
-function navigate(tab) {
-  state.tab = tab;
-  state.offerGuide = null;
-  state.scanView = 'upload';
-  state.showAddBet = false;
-  render();
-}
-
+function navigate(tab) { state.tab = tab; state.offerGuide = null; state.scanView = 'upload'; state.showAddBet = false; render(); }
 function goBack() {
   if (state.offerGuide) { state.offerGuide = null; render(); return; }
   if (state.scanView === 'result') { state.scanView = 'upload'; render(); return; }
 }
-
-function toggleNotif() {
-  state.notifOpen = !state.notifOpen;
-  const panel = document.getElementById('notif-panel');
-  if (state.notifOpen) {
-    panel.classList.add('open');
-    state.notifications = state.notifications.map(n => ({...n, read: true}));
-    updateTopBar();
-    updateNotifPanel();
-  } else {
-    panel.classList.remove('open');
-  }
-}
-
-// close notif on outside click
-document.addEventListener('click', e => {
-  const panel = document.getElementById('notif-panel');
-  if (state.notifOpen && !panel.contains(e.target) && !e.target.classList.contains('notif-btn') && !e.target.closest('.notif-btn')) {
-    state.notifOpen = false;
-    panel.classList.remove('open');
-  }
-});
+function toggleNotif() { state.notifOpen = !state.notifOpen; if (state.notifOpen) state.notifications = state.notifications.map(n=>({...n,read:true})); render(); }
 
 // ═══════════════════════════════════════════════
 // OFFERS
 // ═══════════════════════════════════════════════
 function renderOffers() {
-  const filtered = state.offerFilter === 'ALL' ? OFFERS : OFFERS.filter(o => o.type === state.offerFilter);
-  const types = ['ALL','FREEBET','CASHBACK','TURNEU','RELOAD'];
+  const filtered = state.offerFilter==='ALL' ? OFFERS : OFFERS.filter(o=>o.type===state.offerFilter);
   return `
     <div style="padding:14px 14px 20px;" class="fade-up">
       <div style="background:linear-gradient(135deg,var(--card3),var(--card2));border:1px solid var(--border2);border-radius:16px;padding:16px 18px;margin-bottom:14px;position:relative;overflow:hidden;">
         <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 80% 20%,rgba(26,224,90,.07) 0%,transparent 70%);pointer-events:none;"></div>
         <div class="sec-label">Oferte active azi</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-          <div>
-            <div style="font-family:var(--mono);font-size:2rem;color:var(--green);line-height:1;">+660 <span style="font-size:1rem;">RON</span></div>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">profit estimat disponibil</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:2rem;font-weight:900;color:var(--text);line-height:1;">${OFFERS.length}</div>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">oferte active</div>
-          </div>
+          <div><div style="font-family:var(--mono);font-size:2rem;color:var(--green);line-height:1;">+660 <span style="font-size:1rem;">RON</span></div><div style="font-size:.72rem;color:var(--muted);margin-top:4px;">profit estimat disponibil</div></div>
+          <div style="text-align:right;"><div style="font-size:2rem;font-weight:900;color:var(--text);line-height:1;">${OFFERS.length}</div><div style="font-size:.72rem;color:var(--muted);margin-top:4px;">oferte active</div></div>
         </div>
       </div>
-
       <div class="filter-row">
-        ${types.map(t => `<button class="filter-chip ${state.offerFilter===t?'active':''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
+        ${['ALL','FREEBET','CASHBACK','TURNEU','RELOAD'].map(t=>`<button class="filter-chip ${state.offerFilter===t?'active':''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
       </div>
-
-      ${filtered.map(o => `
+      ${filtered.map(o=>`
         <button class="offer-card" onclick="openOffer(${o.id})">
-          <div class="offer-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div style="display:flex;gap:10px;align-items:center;">
-              <div class="offer-bm-icon" style="background:${o.color}18;border:1px solid ${o.color}28;">${BM_ICON[o.bm]||'📋'}</div>
-              <div>
-                <div style="font-weight:800;font-size:.9rem;color:var(--text);">${o.bm}</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:1px;">${o.title}</div>
-              </div>
+              <div style="width:38px;height:38px;border-radius:10px;background:${o.color}18;border:1px solid ${o.color}28;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">${BM_ICON[o.bm]||'📋'}</div>
+              <div><div style="font-weight:800;font-size:.9rem;color:var(--text);">${o.bm}</div><div style="font-size:.72rem;color:var(--muted);margin-top:1px;">${o.title}</div></div>
             </div>
             <div class="profit-tag">${o.profit}</div>
           </div>
-          <div class="offer-meta">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
             ${[o.badge,'⏱ '+o.expiry,'min '+o.minOdds,o.sport].map(tag=>`<span class="chip">${tag}</span>`).join('')}
           </div>
-          <div class="offer-footer">
-            <div class="offer-progress"><div class="offer-progress-bar" style="width:${(o.steps.length/5)*100}%;background:linear-gradient(90deg,${o.color},${o.color}88);"></div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;height:3px;background:var(--border);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${(o.steps.length/5)*100}%;background:linear-gradient(90deg,${o.color},${o.color}88);border-radius:99px;"></div></div>
             <span style="font-size:.68rem;color:var(--green);font-weight:700;">${o.steps.length} pași →</span>
           </div>
         </button>
@@ -432,23 +484,13 @@ function renderOffers() {
     </div>
   `;
 }
-
 function setFilter(f) { state.offerFilter = f; render(); }
-
-function openOffer(id) {
-  const offer = OFFERS.find(o => o.id === id);
-  state.offerGuide = {offer, step: 0, done: []};
-  document.getElementById('back-btn').style.display = 'block';
-  render();
-}
+function openOffer(id) { state.offerGuide = {offer:OFFERS.find(o=>o.id===id), step:0, done:[]}; render(); }
 
 function renderOfferGuide() {
-  const {offer, step, done} = state.offerGuide;
+  const {offer,step,done} = state.offerGuide;
   const total = offer.steps.length;
-  const isLast = step === total - 1;
-  const allDone = done.length === total;
   const s = offer.steps[step];
-
   return `
     <div style="padding:14px 14px 24px;" class="fade-up">
       <div style="background:linear-gradient(135deg,${offer.color}14,${offer.color}06);border:1px solid ${offer.color}25;border-radius:16px;padding:16px;margin-bottom:14px;">
@@ -465,130 +507,86 @@ function renderOfferGuide() {
         </div>
         <div class="progress-track"><div class="progress-fill" style="width:${(done.length/total)*100}%;"></div></div>
       </div>
-
-      <div class="step-dots">
-        ${offer.steps.map((_,i) => `
-          <button onclick="gotoStep(${i})" class="step-dot ${done.includes(i)?'done':i===step?'active':''}">${done.includes(i)?'✓':i+1}</button>
-        `).join('')}
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;">
+        ${offer.steps.map((_,i)=>`<button onclick="gotoStep(${i})" class="step-dot ${done.includes(i)?'done':i===step?'active':''}">${done.includes(i)?'✓':i+1}</button>`).join('')}
       </div>
-
       <div class="card" style="margin-bottom:10px;">
         <div style="font-size:.62rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:8px;">Pasul ${step+1} din ${total}</div>
         <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:10px;line-height:1.3;">${s.t}</div>
         <div style="font-size:.86rem;color:var(--muted);line-height:1.7;">${s.d}</div>
       </div>
-
-      ${s.t.toLowerCase().includes('acoper') ? `
-        <div class="hint-box" style="background:var(--bdim);border:1px solid rgba(56,189,248,.18);">
-          <span style="font-size:1rem;">🧮</span>
-          <div>
-            <div style="font-size:.76rem;font-weight:700;color:var(--blue);">Folosește tab-ul Calc</div>
-            <div style="font-size:.68rem;color:var(--muted);margin-top:1px;">Introdu cotele → obții lay stake exact și profitul garantat</div>
-          </div>
-        </div>
-      ` : ''}
-
+      ${s.t.toLowerCase().includes('acoper')?`<div class="hint-box" style="background:var(--bdim);border:1px solid rgba(56,189,248,.18);"><span>🧮</span><div><div style="font-size:.76rem;font-weight:700;color:var(--blue);">Folosește tab-ul Calc</div><div style="font-size:.68rem;color:var(--muted);margin-top:1px;">Introdu cotele → obții lay stake exact</div></div></div>`:''}
       <div style="display:flex;gap:8px;">
-        ${step > 0 ? `<button class="btn-secondary" style="flex:1;" onclick="gotoStep(${step-1})">← Anterior</button>` : ''}
-        <button class="btn-primary ${allDone?'':'glow'}" style="flex:2;" onclick="markStep()">
-          ${allDone ? '✓ Finalizat!' : isLast ? 'Completează ✓' : 'Am făcut asta →'}
-        </button>
+        ${step>0?`<button class="btn-secondary" style="flex:1;" onclick="gotoStep(${step-1})">← Anterior</button>`:''}
+        <button class="btn-primary glow" style="flex:2;" onclick="markStep()">${done.length===total?'✓ Finalizat!':step===total-1?'Completează ✓':'Am făcut asta →'}</button>
       </div>
-
-      ${allDone ? `
-        <div style="margin-top:10px;background:var(--gdim);border:1px solid rgba(26,224,90,.2);border-radius:12px;padding:13px;text-align:center;">
-          <div style="font-size:1.3rem;margin-bottom:5px;">🎉</div>
-          <div style="font-weight:700;color:var(--green);font-size:.88rem;">Ai finalizat toți pașii!</div>
-          <div style="font-size:.76rem;color:var(--muted);margin-top:4px;">Adaugă profitul în tab-ul Profit pentru tracking complet.</div>
-        </div>
-      ` : ''}
+      ${done.length===total?`<div style="margin-top:10px;background:var(--gdim);border:1px solid rgba(26,224,90,.2);border-radius:12px;padding:13px;text-align:center;"><div style="font-size:1.3rem;margin-bottom:5px;">🎉</div><div style="font-weight:700;color:var(--green);font-size:.88rem;">Ai finalizat toți pașii!</div></div>`:''}
     </div>
   `;
 }
-
 function gotoStep(i) { state.offerGuide.step = i; render(); }
 function markStep() {
-  const {step, done, offer} = state.offerGuide;
+  const {step,done,offer} = state.offerGuide;
   if (!done.includes(step)) state.offerGuide.done.push(step);
-  if (step < offer.steps.length - 1) state.offerGuide.step = step + 1;
+  if (step < offer.steps.length-1) state.offerGuide.step = step+1;
   render();
 }
 
 // ═══════════════════════════════════════════════
 // CALCULATOR
 // ═══════════════════════════════════════════════
-function calcResult(type, bs, bo, lo, com) {
-  const bsN=parseFloat(bs)||0, boN=parseFloat(bo)||0, loN=parseFloat(lo)||0, comN=(parseFloat(com)||0)/100;
-  if (!bsN || !boN || loN <= 1) return null;
+function calcResult() {
+  const bsN=parseFloat(state.calcBS)||0,boN=parseFloat(state.calcBO)||0,loN=parseFloat(state.calcLO)||0,comN=(parseFloat(state.calcCom)||0)/100;
+  if(!bsN||!boN||loN<=1)return null;
   let ls;
-  if (type==='SNR') ls=(bsN*(boN-1))/(loN*(1-comN));
-  else if (type==='SR') ls=(bsN*boN)/(loN*(1-comN));
+  if(state.calcType==='SNR')ls=(bsN*(boN-1))/(loN*(1-comN));
+  else if(state.calcType==='SR')ls=(bsN*boN)/(loN*(1-comN));
   else ls=(bsN*boN)/(loN*(1-comN));
-  const liab = ls*(loN-1);
-  let pBack, pLay;
-  if (type==='SNR'){pBack=(boN-1)*bsN-ls*(loN-1);pLay=ls*(1-comN);}
-  else if (type==='SR'){pBack=boN*bsN-ls*(loN-1)-bsN;pLay=ls*(1-comN)-bsN;}
+  const liab=ls*(loN-1);
+  let pBack,pLay;
+  if(state.calcType==='SNR'){pBack=(boN-1)*bsN-ls*(loN-1);pLay=ls*(1-comN);}
+  else if(state.calcType==='SR'){pBack=boN*bsN-ls*(loN-1)-bsN;pLay=ls*(1-comN)-bsN;}
   else{pBack=(boN-1)*bsN-ls*(loN-1);pLay=ls*(1-comN)-bsN;}
-  return {ls:ls.toFixed(2),liab:liab.toFixed(2),pBack:pBack.toFixed(2),pLay:pLay.toFixed(2)};
+  return{ls:ls.toFixed(2),liab:liab.toFixed(2),pBack:pBack.toFixed(2),pLay:pLay.toFixed(2)};
 }
 
 function renderCalc() {
-  const res = calcResult(state.calcType, state.calcBS||'50', state.calcBO||'4.50', state.calcLO||'4.60', state.calcCom||'5');
+  const res = calcResult();
   return `
     <div style="padding:14px 14px 24px;">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">Calculator Back / Lay</div>
       <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">Calculează lay stake și profitul garantat.</div>
-
       <div class="calc-type-row">
-        ${[['SNR','Freebet SNR'],['SR','Freebet SR'],['REAL','Bani Reali']].map(([v,l]) => `
-          <button class="calc-type-btn ${state.calcType===v?'active':''}" onclick="setCalcType('${v}')">${l}</button>
-        `).join('')}
+        ${[['SNR','Freebet SNR'],['SR','Freebet SR'],['REAL','Bani Reali']].map(([v,l])=>`<button class="calc-type-btn ${state.calcType===v?'active':''}" onclick="setCalcType('${v}')">${l}</button>`).join('')}
       </div>
-
       <div class="card" style="margin-bottom:10px;">
         <div class="field-row">
-          <div class="field"><label>Miză Back (RON)</label><input id="c-bs" type="number" step="0.01" value="${state.calcBS||'50'}" oninput="calcUpdate()"></div>
-          <div class="field"><label>Cotă Back</label><input id="c-bo" type="number" step="0.01" value="${state.calcBO||'4.50'}" oninput="calcUpdate()"></div>
+          <div class="field"><label>Miză Back (RON)</label><input id="c-bs" type="number" step="0.01" value="${state.calcBS}" oninput="calcUpdate()"></div>
+          <div class="field"><label>Cotă Back</label><input id="c-bo" type="number" step="0.01" value="${state.calcBO}" oninput="calcUpdate()"></div>
         </div>
         <div class="field-row" style="margin-bottom:0;">
-          <div class="field"><label>Cotă Lay (Betfair)</label><input id="c-lo" type="number" step="0.01" value="${state.calcLO||'4.60'}" oninput="calcUpdate()"></div>
-          <div class="field"><label>Comision %</label><input id="c-com" type="number" step="0.1" value="${state.calcCom||'5'}" oninput="calcUpdate()"></div>
+          <div class="field"><label>Cotă Lay (Betfair)</label><input id="c-lo" type="number" step="0.01" value="${state.calcLO}" oninput="calcUpdate()"></div>
+          <div class="field"><label>Comision %</label><input id="c-com" type="number" step="0.1" value="${state.calcCom}" oninput="calcUpdate()"></div>
         </div>
       </div>
-
-      ${res ? `
+      ${res?`
         <div class="card" style="margin-bottom:10px;">
-          <div class="result-box">
-            <div>
-              <div style="font-size:.62rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:3px;">Lay Stake pe Betfair</div>
-              <div class="result-main">${res.ls} <span>RON</span></div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:.62rem;color:var(--muted);margin-bottom:3px;">Liability</div>
-              <div style="font-family:var(--mono);font-size:1rem;color:var(--amber);">${res.liab} RON</div>
-            </div>
+          <div style="background:var(--gdim);border:1px solid rgba(26,224,90,.2);border-radius:10px;padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:.62rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:3px;">Lay Stake pe Betfair</div><div id="lay-result" style="font-family:var(--mono);font-size:1.6rem;color:var(--green);line-height:1;">${res.ls} <span style="font-size:1rem;opacity:.7;">RON</span></div></div>
+            <div style="text-align:right;"><div style="font-size:.62rem;color:var(--muted);margin-bottom:3px;">Liability</div><div id="liab-result" style="font-family:var(--mono);font-size:1rem;color:var(--amber);">${res.liab} RON</div></div>
           </div>
-          <div class="result-grid">
-            <div class="result-cell">
-              <div class="result-cell-label">Dacă Back câștigă</div>
-              <div class="result-cell-val" style="color:${parseFloat(res.pBack)>=0?'var(--green)':'var(--red)'};">${parseFloat(res.pBack)>=0?'+':''}${res.pBack} RON</div>
-            </div>
-            <div class="result-cell">
-              <div class="result-cell-label">Dacă Lay câștigă</div>
-              <div class="result-cell-val" style="color:${parseFloat(res.pLay)>=0?'var(--green)':'var(--red)'};">${parseFloat(res.pLay)>=0?'+':''}${res.pLay} RON</div>
-            </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div style="background:var(--bg3);border-radius:8px;padding:11px;text-align:center;"><div style="font-size:.62rem;color:var(--muted);margin-bottom:5px;line-height:1.3;">Dacă Back câștigă</div><div id="pback-result" style="font-family:var(--mono);font-size:.95rem;color:${parseFloat(res.pBack)>=0?'var(--green)':'var(--red)'};">${parseFloat(res.pBack)>=0?'+':''}${res.pBack} RON</div></div>
+            <div style="background:var(--bg3);border-radius:8px;padding:11px;text-align:center;"><div style="font-size:.62rem;color:var(--muted);margin-bottom:5px;line-height:1.3;">Dacă Lay câștigă</div><div id="play-result" style="font-family:var(--mono);font-size:.95rem;color:${parseFloat(res.pLay)>=0?'var(--green)':'var(--red)'};">${parseFloat(res.pLay)>=0?'+':''}${res.pLay} RON</div></div>
           </div>
-          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px;font-size:.75rem;color:var(--muted);line-height:1.5;">
-            <strong style="color:var(--text);">Ordinea:</strong> Plasează <span style="color:var(--green);font-weight:700;">LAY pe Betfair PRIMUL</span>, apoi BACK la bookmaker.
-          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px;font-size:.75rem;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">Ordinea:</strong> Plasează <span style="color:var(--green);font-weight:700;">LAY pe Betfair PRIMUL</span>, apoi BACK.</div>
         </div>
-      ` : ''}
-
+      `:''}
       <div class="card">
         <div class="sec-label">Ghid cote → conversie freebet</div>
-        ${[['3.00–4.00','60–68%','Calificatoare'],['4.00–5.00','68–76%','Freebets ✓ Ideal'],['5.00–7.00','76–82%','Profit maxim'],['7.00+','82%+','Atenție la spread']].map(([r,c,n],i,arr) => `
-          <div style="display:flex;justify-content:space-between;padding:7px 0;${i<arr.length-1?'border-bottom:1px solid var(--border);':''}">
-            <span style="font-family:var(--mono);font-size:.76rem;color:var(--text);">${r}</span>
+        ${[['3.00–4.00','60–68%','Calificatoare'],['4.00–5.00','68–76%','Freebets ✓'],['5.00–7.00','76–82%','Profit maxim'],['7.00+','82%+','Atenție spread']].map(([r,c,n],i,a)=>`
+          <div style="display:flex;justify-content:space-between;padding:7px 0;${i<a.length-1?'border-bottom:1px solid var(--border);':''}">
+            <span style="font-family:var(--mono);font-size:.76rem;">${r}</span>
             <span style="font-size:.76rem;color:var(--green);font-weight:700;">${c}</span>
             <span style="font-size:.72rem;color:var(--muted);">${n}</span>
           </div>
@@ -597,8 +595,7 @@ function renderCalc() {
     </div>
   `;
 }
-
-function setCalcType(t) { state.calcType = t; render(); }
+function setCalcType(t) { state.calcType=t; render(); }
 function bindCalc() {
   ['c-bs','c-bo','c-lo','c-com'].forEach(id => {
     const el = document.getElementById(id);
@@ -606,23 +603,16 @@ function bindCalc() {
   });
 }
 function calcUpdate() {
-  state.calcBS = document.getElementById('c-bs')?.value;
-  state.calcBO = document.getElementById('c-bo')?.value;
-  state.calcLO = document.getElementById('c-lo')?.value;
-  state.calcCom = document.getElementById('c-com')?.value;
-  const res = calcResult(state.calcType, state.calcBS, state.calcBO, state.calcLO, state.calcCom);
-  // update result section only
-  const cardEl = document.querySelector('.result-box');
+  state.calcBS=document.getElementById('c-bs')?.value||state.calcBS;
+  state.calcBO=document.getElementById('c-bo')?.value||state.calcBO;
+  state.calcLO=document.getElementById('c-lo')?.value||state.calcLO;
+  state.calcCom=document.getElementById('c-com')?.value||state.calcCom;
+  const res = calcResult();
   if (!res) return;
-  if (cardEl) {
-    cardEl.querySelector('.result-main').innerHTML = `${res.ls} <span>RON</span>`;
-    cardEl.querySelector('[style*="var(--amber)"]').textContent = res.liab + ' RON';
-    const cells = document.querySelectorAll('.result-cell-val');
-    if (cells[0]) { cells[0].textContent = (parseFloat(res.pBack)>=0?'+':'') + res.pBack + ' RON'; cells[0].style.color = parseFloat(res.pBack)>=0?'var(--green)':'var(--red)'; }
-    if (cells[1]) { cells[1].textContent = (parseFloat(res.pLay)>=0?'+':'') + res.pLay + ' RON'; cells[1].style.color = parseFloat(res.pLay)>=0?'var(--green)':'var(--red)'; }
-  } else {
-    render();
-  }
+  const lr=document.getElementById('lay-result'); if(lr)lr.innerHTML=`${res.ls} <span style="font-size:1rem;opacity:.7;">RON</span>`;
+  const lir=document.getElementById('liab-result'); if(lir)lir.textContent=res.liab+' RON';
+  const pb=document.getElementById('pback-result'); if(pb){pb.textContent=(parseFloat(res.pBack)>=0?'+':'')+res.pBack+' RON';pb.style.color=parseFloat(res.pBack)>=0?'var(--green)':'var(--red)';}
+  const pl=document.getElementById('play-result'); if(pl){pl.textContent=(parseFloat(res.pLay)>=0?'+':'')+res.pLay+' RON';pl.style.color=parseFloat(res.pLay)>=0?'var(--green)':'var(--red)';}
 }
 
 // ═══════════════════════════════════════════════
@@ -630,13 +620,12 @@ function calcUpdate() {
 // ═══════════════════════════════════════════════
 function renderTracker() {
   const bets = state.bets;
-  const total = bets.reduce((s,b) => s+b.profit, 0);
-  const won = bets.filter(b => b.profit > 0).length;
+  const total = bets.reduce((s,b)=>s+(parseFloat(b.profit)||0),0);
+  const won = bets.filter(b=>parseFloat(b.profit)>0).length;
   const byBm = {};
-  bets.forEach(b => { byBm[b.bm] = (byBm[b.bm]||0) + b.profit; });
-  const sortedBm = Object.entries(byBm).sort((a,b) => b[1]-a[1]);
-  const maxBm = Math.max(...Object.values(byBm).map(Math.abs));
-
+  bets.forEach(b=>{byBm[b.bm]=(byBm[b.bm]||0)+(parseFloat(b.profit)||0);});
+  const sortedBm = Object.entries(byBm).sort((a,b)=>b[1]-a[1]);
+  const maxBm = Math.max(1,...Object.values(byBm).map(Math.abs));
   return `
     <div style="padding:14px 14px 24px;">
       <div class="stat-grid">
@@ -646,35 +635,30 @@ function renderTracker() {
           {l:'Rata Win',v:bets.length?Math.round((won/bets.length)*100)+'%':'—',c:'var(--amber)'},
         ].map(s=>`<div class="stat-cell"><div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${s.l}</div><div style="font-family:var(--mono);font-size:1rem;color:${s.c};">${s.v}</div></div>`).join('')}
       </div>
-
-      <div class="card" style="margin-bottom:12px;">
-        <div class="sec-label">Profit pe Bookmaker</div>
-        ${sortedBm.map(([bm,val]) => `
-          <div class="bm-bar-row">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-              <span style="font-size:.8rem;color:var(--text);">${BM_ICON[bm]||'📋'} ${bm}</span>
-              <span style="font-family:var(--mono);font-size:.8rem;color:${val>=0?'var(--green)':'var(--red)'};">${val>=0?'+':''}${val.toFixed(0)} RON</span>
+      ${sortedBm.length>0?`
+        <div class="card" style="margin-bottom:12px;">
+          <div class="sec-label">Profit pe Bookmaker</div>
+          ${sortedBm.map(([bm,val])=>`
+            <div style="margin-bottom:9px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:.8rem;">${BM_ICON[bm]||'📋'} ${bm}</span>
+                <span style="font-family:var(--mono);font-size:.8rem;color:${val>=0?'var(--green)':'var(--red)'};">${val>=0?'+':''}${val.toFixed(0)} RON</span>
+              </div>
+              <div style="background:var(--border);border-radius:99px;height:3px;overflow:hidden;"><div style="height:100%;background:${val>=0?'var(--green)':'var(--red)'};border-radius:99px;width:${(Math.abs(val)/maxBm*100)}%;"></div></div>
             </div>
-            <div class="bm-bar-track"><div class="bm-bar-fill" style="width:${(Math.abs(val)/maxBm*100)}%;background:${val>=0?'var(--green)':'var(--red)'};"></div></div>
-          </div>
-        `).join('')}
-      </div>
-
+          `).join('')}
+        </div>
+      `:''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-weight:700;font-size:.88rem;">Istoricul Pariurilor</div>
         <button onclick="toggleAddBet()" style="background:var(--green);color:var(--bg);border:none;border-radius:8px;padding:6px 13px;font-size:.75rem;font-weight:800;cursor:pointer;font-family:var(--font);">+ Adaugă</button>
       </div>
-
-      ${state.showAddBet ? `
+      ${state.showAddBet?`
         <div class="card" style="border-color:var(--green);margin-bottom:10px;">
           <div style="font-size:.75rem;font-weight:800;color:var(--green);margin-bottom:10px;">Pariu Nou</div>
           <div class="form-row">
-            <select id="add-bm" style="flex:1;">
-              ${['Superbet','Betano','Unibet','Fortuna','MaxBet','TotoGaming'].map(b=>`<option>${b}</option>`).join('')}
-            </select>
-            <select id="add-type" style="flex:1;">
-              ${['Freebet SNR','Freebet SR','Qualifier','Cashback','Reload','Turneu'].map(t=>`<option>${t}</option>`).join('')}
-            </select>
+            <select id="add-bm">${['Superbet','Betano','Unibet','Fortuna','MaxBet','TotoGaming','Betfair'].map(b=>`<option>${b}</option>`).join('')}</select>
+            <select id="add-type">${['Freebet SNR','Freebet SR','Qualifier','Cashback','Reload','Turneu'].map(t=>`<option>${t}</option>`).join('')}</select>
           </div>
           <input id="add-match" placeholder="Meci (ex: Man City vs Arsenal)" style="margin-bottom:8px;">
           <div class="form-row">
@@ -687,46 +671,40 @@ function renderTracker() {
             <button onclick="toggleAddBet()" class="btn-secondary" style="flex:1;padding:10px;">Anulează</button>
           </div>
         </div>
-      ` : ''}
-
-      ${[...bets].reverse().map(b => `
+      `:''}
+      ${bets.length===0?`<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:.88rem;">Niciun pariu înregistrat încă.<br>Adaugă primul tău pariu sau scanează un bon.</div>`:''}
+      ${bets.map(b=>`
         <div class="bet-row">
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
-              <span style="font-size:.82rem;">${BM_ICON[b.bm]||'📋'}</span>
-              <span style="font-size:.8rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.match}</span>
+              <span>${BM_ICON[b.bm]||'📋'}</span>
+              <span style="font-size:.8rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.match||'—'}</span>
             </div>
-            <div style="font-size:.68rem;color:var(--muted);">${b.bm} · ${b.type} · ${b.date}${b.fromScan?' · 📸':''}</div>
+            <div style="font-size:.68rem;color:var(--muted);">${b.bm} · ${b.type} · ${b.date||''}${b.fromScan?' · 📸':''}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-            <div style="font-family:var(--mono);font-size:.9rem;color:${b.profit>0?'var(--green)':b.profit<0?'var(--red)':'var(--muted)'};">${b.profit>0?'+':''}${b.profit.toFixed(0)} RON</div>
-            <div style="font-size:.62rem;color:var(--muted);margin-top:1px;">${b.status==='won'?'✓':b.status==='lost'?'✗':'⏳'} ${b.status}</div>
+            <div style="font-family:var(--mono);font-size:.9rem;color:${parseFloat(b.profit)>0?'var(--green)':parseFloat(b.profit)<0?'var(--red)':'var(--muted)'};">${parseFloat(b.profit)>0?'+':''}${parseFloat(b.profit).toFixed(0)} RON</div>
+            <div style="font-size:.62rem;color:var(--muted);margin-top:1px;">${b.status==='won'?'✓':b.status==='lost'?'✗':'⏳'} ${b.status||'pending'}</div>
           </div>
         </div>
       `).join('')}
     </div>
   `;
 }
-
-function toggleAddBet() { state.showAddBet = !state.showAddBet; render(); }
-function bindTracker() {}
-function saveNewBet() {
-  const match = document.getElementById('add-match')?.value;
-  const profit = parseFloat(document.getElementById('add-profit')?.value);
-  if (!match || isNaN(profit)) return;
-  state.bets.push({
-    id: Date.now(),
-    date: new Date().toLocaleDateString('ro'),
-    bm: document.getElementById('add-bm')?.value || 'Superbet',
-    type: document.getElementById('add-type')?.value || 'Freebet SNR',
-    match,
-    back: parseFloat(document.getElementById('add-back')?.value)||0,
-    lay: parseFloat(document.getElementById('add-lay')?.value)||0,
-    stake: 0,
-    profit,
-    status: profit >= 0 ? 'won' : 'lost',
-  });
-  state.showAddBet = false;
+function toggleAddBet() { state.showAddBet=!state.showAddBet; render(); }
+async function saveNewBet() {
+  const match=document.getElementById('add-match')?.value;
+  const profit=parseFloat(document.getElementById('add-profit')?.value);
+  if(!match||isNaN(profit))return;
+  const bet={
+    bm:document.getElementById('add-bm')?.value||'Superbet',
+    type:document.getElementById('add-type')?.value||'Freebet SNR',
+    match,back:document.getElementById('add-back')?.value||0,
+    lay:document.getElementById('add-lay')?.value||0,
+    stake:0,profit,fromScan:false,
+  };
+  await saveBet(bet);
+  state.showAddBet=false;
   render();
 }
 
@@ -737,326 +715,218 @@ function renderScan() {
   return `
     <div style="padding:14px 14px 24px;">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">Scanner Bon</div>
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">Fotografiază orice bon — AI-ul extrage automat toate detaliile.</div>
-
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">Fotografiază orice bon — AI extrage automat toate detaliile.</div>
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-        ${state.scanning ? '<div class="scan-line"></div>' : ''}
-        <div style="font-size:2.5rem;margin-bottom:10px;">${state.scanning ? '🔍' : '📤'}</div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:5px;">${state.scanning ? (state.scanProgress||'Se analizează...') : 'Adaugă screenshot-uri'}</div>
-        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">${state.scanning ? 'AI-ul analizează bonul...' : 'Apasă sau trage fișierele\nJPG, PNG, PDF acceptate'}</div>
+        ${state.scanning?'<div class="scan-line"></div>':''}
+        <div style="font-size:2.5rem;margin-bottom:10px;">${state.scanning?'🔍':'📤'}</div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:5px;">${state.scanning?(state.scanProgress||'Se analizează...'):'Adaugă screenshot-uri'}</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">${state.scanning?'AI-ul analizează bonul...':'Apasă sau trage fișierele\nJPG, PNG acceptate'}</div>
       </div>
-
-      <input type="file" id="file-input" accept="image/*,application/pdf" multiple style="display:none;" onchange="handleFiles(this.files)">
-
-      ${state.scanImages.length > 0 ? `
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+      ${state.scanImages.length>0?`
         <div style="margin-bottom:14px;">
-          <div class="sec-label">${state.scanImages.length} ${state.scanImages.length===1?'imagine adăugată':'imagini adăugate'}</div>
-          <div class="preview-grid">
-            ${state.scanImages.map((img,i) => `
+          <div class="sec-label">${state.scanImages.length} imagine${state.scanImages.length>1?'i':''} adăugat${state.scanImages.length>1?'e':''}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${state.scanImages.map((img,i)=>`
               <div class="preview-item">
                 <img src="${img.preview}" alt="">
-                <div class="preview-num">#${i+1}</div>
-                <button class="preview-del" onclick="removeImage(${i})">×</button>
+                <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);padding:3px 5px;font-size:.58rem;color:white;font-weight:700;">#${i+1}</div>
+                <button onclick="removeImage(${i})" style="position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--red);border:none;color:white;font-size:.65rem;cursor:pointer;font-weight:900;display:flex;align-items:center;justify-content:center;">×</button>
               </div>
             `).join('')}
-            ${!state.scanning ? `
-              <button onclick="document.getElementById('file-input').click()" style="width:76px;height:96px;border-radius:9px;border:2px dashed var(--border2);background:transparent;color:var(--muted);font-size:1.3rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0;">
-                <span>+</span><span style="font-size:.55rem;font-weight:700;text-transform:uppercase;">Adaugă</span>
-              </button>
-            ` : ''}
+            ${!state.scanning?`<button onclick="document.getElementById('file-input').click()" style="width:76px;height:96px;border-radius:9px;border:2px dashed var(--border2);background:transparent;color:var(--muted);font-size:1.3rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;"><span>+</span><span style="font-size:.55rem;font-weight:700;text-transform:uppercase;">Adaugă</span></button>`:''}
           </div>
         </div>
-      ` : ''}
-
+      `:''}
       <div class="hint-box" style="background:var(--bdim);border:1px solid rgba(56,189,248,.15);margin-bottom:12px;">
-        <span>💡</span>
-        <div style="font-size:.76rem;color:var(--text);line-height:1.6;"><strong style="color:var(--blue);">Bon lung?</strong> Adaugă toate screenshot-urile în ordine. AI-ul le combină automat.</div>
+        <span>💡</span><div style="font-size:.76rem;line-height:1.6;"><strong style="color:var(--blue);">Bon lung?</strong> Adaugă toate screenshot-urile în ordine. AI-ul le combină automat.</div>
       </div>
-
-      ${state.scanError ? `<div style="background:var(--rdim);border:1px solid rgba(255,77,77,.18);border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:.8rem;color:var(--red);">⚠️ ${state.scanError}</div>` : ''}
-
-      <button onclick="analyzeImages()" ${state.scanning || !state.scanImages.length ? 'disabled' : ''}
-        style="width:100%;padding:14px;border-radius:12px;border:none;background:${state.scanning||!state.scanImages.length?'var(--muted2)':'var(--green)'};color:${state.scanning||!state.scanImages.length?'var(--muted)':'var(--bg)'};font-weight:800;font-size:.95rem;cursor:${state.scanning||!state.scanImages.length?'default':'pointer'};margin-bottom:8px;font-family:var(--font);${!state.scanning&&state.scanImages.length?'box-shadow:0 0 18px var(--gglow);':''}">
-        ${state.scanning ? '⏳ Se analizează...' : `🔍 Analizează ${state.scanImages.length ? state.scanImages.length+' imagine'+(state.scanImages.length>1?'i':'') : 'Bon'}`}
+      ${state.scanError?`<div style="background:var(--rdim);border:1px solid rgba(255,77,77,.18);border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:.8rem;color:var(--red);">⚠️ ${state.scanError}</div>`:''}
+      <button onclick="analyzeImages()" ${state.scanning||!state.scanImages.length?'disabled':''} style="width:100%;padding:14px;border-radius:12px;border:none;background:${state.scanning||!state.scanImages.length?'var(--muted2)':'var(--green)'};color:${state.scanning||!state.scanImages.length?'var(--muted)':'var(--bg)'};font-weight:800;font-size:.95rem;cursor:${state.scanning||!state.scanImages.length?'default':'pointer'};margin-bottom:8px;font-family:var(--font);${!state.scanning&&state.scanImages.length?'box-shadow:0 0 18px var(--gglow);':''}">
+        ${state.scanning?'⏳ Se analizează...':'🔍 Analizează '+( state.scanImages.length?state.scanImages.length+' imagine'+(state.scanImages.length>1?'i':''):'Bon')}
       </button>
-
-      <button onclick="loadDemo()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-weight:500;font-size:.82rem;cursor:pointer;font-family:var(--font);">
-        Demo — testează cu bon exemplu
-      </button>
+      <button onclick="loadDemo()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-weight:500;font-size:.82rem;cursor:pointer;font-family:var(--font);">Demo — testează cu bon exemplu</button>
     </div>
   `;
 }
-
 function bindScan() {
-  const dz = document.getElementById('drop-zone');
-  if (dz) {
-    dz.addEventListener('dragover', e => e.preventDefault());
-    dz.addEventListener('drop', e => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
-  }
+  const dz=document.getElementById('drop-zone');
+  if(dz){dz.addEventListener('dragover',e=>e.preventDefault());dz.addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransfer.files);});}
 }
-
-function removeImage(i) {
-  state.scanImages.splice(i, 1);
-  render();
-}
-
-function handleFiles(files) {
-  const arr = Array.from(files);
-  let processed = 0;
-  arr.forEach(f => {
-    if (!f.type.startsWith('image/') && f.type !== 'application/pdf') return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const base64 = e.target.result.split(',')[1];
-      const preview = URL.createObjectURL(f);
-      state.scanImages.push({preview, base64, type: f.type});
-      processed++;
-      if (processed === arr.length) render();
-    };
-    reader.readAsDataURL(f);
+function removeImage(i){state.scanImages.splice(i,1);render();}
+function handleFiles(files){
+  Array.from(files).forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const r=new FileReader();
+    r.onload=e=>{state.scanImages.push({preview:URL.createObjectURL(f),base64:e.target.result.split(',')[1],type:f.type});render();};
+    r.readAsDataURL(f);
   });
-  state.scanError = '';
+  state.scanError='';
 }
-
-async function analyzeImages() {
-  if (!state.scanImages.length) return;
-  state.scanning = true;
-  state.scanError = '';
-  state.scanProgress = 'Se analizează imaginile...';
-  render();
-
-  try {
-    const imgContent = state.scanImages.map(img => ({
-      type: 'image',
-      source: {type:'base64', media_type: img.type==='application/pdf'?'image/jpeg':img.type, data: img.base64}
-    }));
-
-    state.scanProgress = 'AI procesează bonul...';
-    render();
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [...imgContent, {type:'text', text:`Ești expert în analiza bonurilor de pariuri sportive românești. Analizează imaginile și extrage datele din bon.
-
-Returnează STRICT JSON valid (fără text suplimentar, fără markdown, fără backticks):
-{"bookmaker":"Superbet/Betano/Unibet/Fortuna/MaxBet/TotoGaming/altul","date":"DD.MM.YYYY sau null","betType":"Simplu|Acumulator|Sistem|Freebet","rawType":"descriere exactă","stake":numar_sau_null,"totalOdds":numar_sau_null,"potentialWin":numar_sau_null,"isFreebet":true/false,"confidence":0.0-1.0,"selections":[{"match":"Echipa1 vs Echipa2","market":"tip piata","pick":"selectia exacta","odds":numar_sau_null,"sport":"Fotbal|Tenis|Baschet|altul","status":"pending|won|lost|void"}],"notes":"observatii sau null"}`}]
-        }]
-      })
-    });
-
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error.message || 'Eroare API');
-    const text = data.content?.find(b => b.type==='text')?.text || '';
+async function analyzeImages(){
+  if(!state.scanImages.length)return;
+  state.scanning=true;state.scanError='';state.scanProgress='Se analizează imaginile...';render();
+  try{
+    const imgContent=state.scanImages.map(img=>({type:'image',source:{type:'base64',media_type:img.type,data:img.base64}}));
+    state.scanProgress='AI procesează bonul...';render();
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:2000,
+      messages:[{role:'user',content:[...imgContent,{type:'text',text:`Analizează bonul de pariu din imagine și returnează STRICT JSON valid (fără text extra, fără backticks):
+{"bookmaker":"Superbet/Betano/Unibet/Fortuna/MaxBet/TotoGaming/altul","date":"DD.MM.YYYY sau null","betType":"Simplu|Acumulator|Sistem|Freebet","rawType":"descriere","stake":numar,"totalOdds":numar,"potentialWin":numar,"isFreebet":true/false,"confidence":0.0-1.0,"selections":[{"match":"Echipa1 vs Echipa2","market":"tip piata","pick":"selectia","odds":numar,"sport":"Fotbal|Tenis|Baschet|altul","status":"pending|won|lost"}],"notes":"observatii sau null"}`}]}]
+    })});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.find(b=>b.type==='text')?.text||'';
     let parsed;
-    try { parsed = JSON.parse(text.replace(/```json|```/g,'').trim()); }
-    catch { throw new Error('Imagine neclară. Încearcă un screenshot mai bun.'); }
-    const slip = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (!slip?.bookmaker && !slip?.selections) throw new Error('Nu am găsit date despre pariu în imagine.');
-
-    const withId = {...slip, id: Date.now(), images: state.scanImages.map(i=>i.preview), savedAt: new Date().toISOString()};
-    state.scanResult = withId;
-
-    // add to tracker
-    if (slip.stake && slip.potentialWin) {
-      state.bets.push({
-        id: Date.now()+1,
-        date: slip.date || new Date().toLocaleDateString('ro'),
-        bm: slip.bookmaker || '—',
-        type: slip.betType || '—',
-        match: slip.selections?.[0]?.match || 'Bon scanat',
-        back: slip.totalOdds || 0,
-        lay: 0, stake: slip.stake, profit: 0, status: 'pending', fromScan: true,
-      });
+    try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}
+    catch{throw new Error('Imagine neclară. Încearcă un screenshot mai bun.');}
+    const slip=Array.isArray(parsed)?parsed[0]:parsed;
+    if(!slip?.bookmaker&&!slip?.selections)throw new Error('Nu am găsit date despre pariu.');
+    const withId={...slip,id:Date.now(),images:state.scanImages.map(i=>i.preview)};
+    state.scanResult=withId;
+    if(slip.stake){
+      await saveBet({bm:slip.bookmaker||'—',type:slip.betType||'—',match:slip.selections?.[0]?.match||'Bon scanat',back:slip.totalOdds||0,lay:0,stake:slip.stake,profit:0,fromScan:true});
     }
-
-    state.scanning = false;
-    state.scanView = 'result';
-    document.getElementById('back-btn').style.display = 'block';
-    render();
-
-  } catch(err) {
-    state.scanning = false;
-    state.scanError = err.message || 'A apărut o eroare. Încearcă din nou.';
-    render();
+    state.scanning=false;state.scanView='result';render();
+  }catch(err){
+    state.scanning=false;state.scanError=err.message||'Eroare. Încearcă din nou.';render();
   }
 }
-
-function loadDemo() {
-  state.scanResult = {
-    bookmaker:"Superbet",date:"15.03.2025",betType:"Acumulator",rawType:"Acumulator 4 selecții",
-    stake:50,totalOdds:18.40,potentialWin:920,isFreebet:false,confidence:0.95,images:[],
+function loadDemo(){
+  state.scanResult={bookmaker:"Superbet",date:"15.03.2025",betType:"Acumulator",rawType:"Acumulator 4 selecții",stake:50,totalOdds:18.40,potentialWin:920,isFreebet:false,confidence:0.95,images:[],
     selections:[
       {match:"Real Madrid vs Man City",market:"Rezultat Final",pick:"Real Madrid",odds:2.30,sport:"Fotbal",status:"pending"},
       {match:"Bayern vs Arsenal",market:"Ambele marchează",pick:"Da",odds:1.75,sport:"Fotbal",status:"pending"},
       {match:"Djokovic vs Alcaraz",market:"Câștigător",pick:"Alcaraz",odds:2.10,sport:"Tenis",status:"pending"},
       {match:"Lakers vs Celtics",market:"Handicap",pick:"Lakers -3.5",odds:2.30,sport:"Baschet",status:"pending"},
-    ],
-    notes:"Bon acumulator 4 sporturi. Cotă cu bonus fidelitate 5%."
-  };
-  state.scanView = 'result';
-  document.getElementById('back-btn').style.display = 'block';
-  render();
+    ],notes:"Bon acumulator 4 sporturi."};
+  state.scanView='result';render();
 }
-
-function renderScanResult() {
-  const slip = state.scanResult;
-  const conf = slip.confidence || 0.9;
-  const confColor = conf > .8 ? 'var(--green)' : conf > .6 ? 'var(--amber)' : 'var(--red)';
-  const confBg = conf > .8 ? 'var(--gdim)' : conf > .6 ? 'var(--adim)' : 'var(--rdim)';
-  const BT_COLOR = {"Simplu":"var(--green)","Acumulator":"var(--amber)","Sistem":"var(--blue)","Freebet":"var(--purple)"};
-  const typeColor = BT_COLOR[slip.betType] || 'var(--green)';
-
+function renderScanResult(){
+  const slip=state.scanResult;
+  const conf=slip.confidence||0.9;
+  const confColor=conf>.8?'var(--green)':conf>.6?'var(--amber)':'var(--red)';
+  const BTC={"Simplu":"var(--green)","Acumulator":"var(--amber)","Sistem":"var(--blue)","Freebet":"var(--purple)"};
+  const tc=BTC[slip.betType]||'var(--green)';
   return `
     <div style="padding:14px 14px 24px;" class="fade-up">
-      <div style="background:${confBg};border:1px solid ${confColor}33;border-radius:12px;padding:10px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:center;">
+      <div style="background:${conf>.8?'var(--gdim)':conf>.6?'var(--adim)':'var(--rdim)'};border:1px solid ${confColor}33;border-radius:12px;padding:10px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:center;">
         <span>${conf>.8?'✅':conf>.6?'⚠️':'❌'}</span>
-        <div>
-          <div style="font-size:.76rem;font-weight:700;color:${confColor};">Precizie extragere: ${Math.round(conf*100)}%</div>
-          <div style="font-size:.68rem;color:var(--muted);margin-top:2px;">${conf>.8?'Toate câmpurile citite cu succes':conf>.6?'Verifică câmpurile marcate':'Imaginea nu era suficient de clară'}</div>
-        </div>
+        <div><div style="font-size:.76rem;font-weight:700;color:${confColor};">Precizie: ${Math.round(conf*100)}%</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px;">${conf>.8?'Toate câmpurile citite cu succes':'Verifică câmpurile marcate'}</div></div>
       </div>
-
       <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;">
-        <div class="slip-header">
-          <div style="display:flex;gap:9px;align-items:center;">
-            <span style="font-size:1.3rem;">${BM_ICON[slip.bookmaker]||'📋'}</span>
-            <div>
-              <div style="font-weight:800;font-size:.95rem;">${slip.bookmaker||'Necunoscut'}</div>
-              <div style="font-size:.68rem;color:var(--muted);margin-top:1px;">${slip.date||'—'}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            ${slip.isFreebet ? `<span style="background:var(--pdim);border:1px solid rgba(192,132,252,.2);border-radius:6px;padding:3px 8px;font-size:.65rem;font-weight:700;color:var(--purple);">FREEBET</span>` : ''}
-            <span style="background:${typeColor}18;border:1px solid ${typeColor}28;border-radius:7px;padding:3px 9px;font-size:.72rem;font-weight:700;color:${typeColor};">${slip.betType}</span>
-          </div>
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;gap:9px;align-items:center;"><span style="font-size:1.3rem;">${BM_ICON[slip.bookmaker]||'📋'}</span><div><div style="font-weight:800;font-size:.95rem;">${slip.bookmaker||'—'}</div><div style="font-size:.68rem;color:var(--muted);margin-top:1px;">${slip.date||'—'}</div></div></div>
+          <span style="background:${tc}18;border:1px solid ${tc}28;border-radius:7px;padding:3px 9px;font-size:.72rem;font-weight:700;color:${tc};">${slip.betType}</span>
         </div>
-
-        <div class="financials">
-          ${[
-            {l:'Miză',v:slip.stake!=null?slip.stake+' RON':'—',c:'var(--text)'},
-            {l:'Cotă',v:slip.totalOdds!=null?'×'+slip.totalOdds:'—',c:'var(--amber)'},
-            {l:'Câștig',v:slip.potentialWin!=null?slip.potentialWin+' RON':'—',c:'var(--green)'},
-          ].map(f=>`
-            <div class="fin-cell">
-              <div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${f.l}</div>
-              <div style="font-family:var(--mono);font-size:.9rem;color:${f.c};">${f.v}</div>
-            </div>
-          `).join('')}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);">
+          ${[{l:'Miză',v:slip.stake!=null?slip.stake+' RON':'—',c:'var(--text)'},{l:'Cotă',v:slip.totalOdds!=null?'×'+slip.totalOdds:'—',c:'var(--amber)'},{l:'Câștig',v:slip.potentialWin!=null?slip.potentialWin+' RON':'—',c:'var(--green)'}].map((f,i)=>`<div style="padding:12px;text-align:center;${i<2?'border-right:1px solid var(--border);':''}"><div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${f.l}</div><div style="font-family:var(--mono);font-size:.9rem;color:${f.c};">${f.v}</div></div>`).join('')}
         </div>
-
         <div style="padding:13px 15px;">
-          <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">${slip.selections?.length||0} Selecții</div>
-          ${slip.selections?.map(s => `
-            <div class="sel-card" style="border-left:3px solid ${s.status==='won'?'var(--green)':s.status==='lost'?'var(--red)':'var(--border2)'};">
+          <div class="sec-label">${slip.selections?.length||0} Selecții</div>
+          ${slip.selections?.map(s=>`
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:6px;border-left:3px solid ${s.status==='won'?'var(--green)':s.status==='lost'?'var(--red)':'var(--border2)'};">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:2px;">${s.match||'—'}</div>
-                  <div style="font-size:.68rem;color:var(--muted);">${s.market||'—'}</div>
-                </div>
+                <div style="flex:1;min-width:0;"><div style="font-size:.78rem;font-weight:700;margin-bottom:2px;">${s.match||'—'}</div><div style="font-size:.68rem;color:var(--muted);">${s.market||'—'}</div></div>
                 ${s.odds?`<span style="font-family:var(--mono);font-size:.82rem;color:var(--amber);margin-left:8px;flex-shrink:0;">×${s.odds}</span>`:''}
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="background:rgba(26,224,90,.08);border:1px solid rgba(26,224,90,.15);border-radius:5px;padding:2px 8px;font-size:.7rem;color:var(--green);font-weight:600;">${s.pick||'—'}</span>
-                <div style="display:flex;gap:5px;">
-                  ${s.sport?`<span style="font-size:.62rem;color:var(--muted);background:var(--bg2);border-radius:4px;padding:2px 5px;">${s.sport}</span>`:''}
-                  ${s.status&&s.status!=='pending'?`<span style="font-size:.68rem;font-weight:700;color:${s.status==='won'?'var(--green)':'var(--red)'};">${s.status==='won'?'✓':'✗'}</span>`:''}
-                </div>
-              </div>
+              <span style="background:rgba(26,224,90,.08);border:1px solid rgba(26,224,90,.15);border-radius:5px;padding:2px 8px;font-size:.7rem;color:var(--green);font-weight:600;">${s.pick||'—'}</span>
             </div>
           `).join('')||''}
         </div>
       </div>
-
-      ${slip.notes ? `<div style="background:var(--adim);border:1px solid rgba(245,166,35,.15);border-radius:10px;padding:10px 13px;margin-bottom:10px;font-size:.78rem;color:var(--text);line-height:1.6;"><strong style="color:var(--amber);">Note: </strong>${slip.notes}</div>` : ''}
-
       <div style="background:var(--gdim);border:1px solid rgba(26,224,90,.18);border-radius:10px;padding:10px 13px;margin-bottom:10px;font-size:.76rem;color:var(--muted);display:flex;gap:7px;align-items:center;">
-        <span>✅</span><span>Bonul a fost adăugat automat în <strong style="color:var(--text);">tab-ul Profit</strong>.</span>
+        <span>✅</span><span>Bonul a fost adăugat automat în <strong style="color:var(--text);">Profit</strong>.</span>
       </div>
-
       <button onclick="newScan()" class="btn-primary glow">+ Scanează Alt Bon</button>
     </div>
   `;
 }
-
-function newScan() {
-  state.scanView = 'upload';
-  state.scanImages = [];
-  state.scanResult = null;
-  state.scanError = '';
-  document.getElementById('back-btn').style.display = 'none';
-  render();
-}
+function newScan(){state.scanView='upload';state.scanImages=[];state.scanResult=null;state.scanError='';render();}
 
 // ═══════════════════════════════════════════════
 // PROFILE
 // ═══════════════════════════════════════════════
-function renderProfile() {
+function renderProfile(){
+  const totalBalance=state.bookmakers.reduce((s,b)=>s+(parseFloat(b.balance)||0),0);
   return `
     <div style="padding:14px 14px 24px;">
-      <div style="background:linear-gradient(135deg,var(--card3),var(--card2));border:1px solid var(--border2);border-radius:16px;padding:20px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,224,90,.06) 0%,transparent 70%);pointer-events:none;"></div>
-        <div style="width:56px;height:56px;border-radius:50%;background:var(--gdim);border:2px solid rgba(26,224,90,.3);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👤</div>
-        <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">Cont Trial</div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;"><span style="color:var(--amber);font-weight:700;">6 zile</span> rămase din trial gratuit</div>
-        <div class="progress-track" style="margin-bottom:16px;"><div class="progress-fill" style="width:${(6/7)*100}%;background:linear-gradient(90deg,var(--amber),var(--amber)88);"></div></div>
-        <button style="width:100%;background:var(--green);color:var(--bg);border:none;border-radius:11px;padding:13px;font-weight:800;font-size:.92rem;cursor:pointer;font-family:var(--font);box-shadow:0 0 20px var(--gglow);">
-          Activează Abonament — 39 RON/lună
-        </button>
-        <div style="font-size:.68rem;color:var(--muted);margin-top:8px;">Anulare oricând · Fără contract · Acces imediat</div>
+      <div style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div><div style="font-weight:700;font-size:.9rem;">${state.user?.email||'—'}</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;">Cont activ · Trial 6 zile rămase</div></div>
+          <button onclick="signOut()" style="background:var(--rdim);border:1px solid rgba(255,77,77,.2);color:var(--red);border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--font);">Ieși</button>
+        </div>
+        <div style="background:var(--border);border-radius:99px;height:4px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;background:linear-gradient(90deg,var(--amber),var(--amber)88);border-radius:99px;width:${(6/7)*100}%;"></div></div>
+        <button style="width:100%;background:var(--green);color:var(--bg);border:none;border-radius:10px;padding:12px;font-weight:800;font-size:.88rem;cursor:pointer;font-family:var(--font);margin-top:8px;box-shadow:0 0 16px var(--gglow);">Activează Abonament — 39 RON/lună</button>
       </div>
 
-      <div class="card" style="margin-bottom:10px;">
-        <div class="sec-label">Cu abonamentul activ</div>
-        ${[
-          {i:'🎯',t:'Oferte actualizate zilnic manual'},
-          {i:'🔔',t:'Alerte instant oferte noi pe Telegram'},
-          {i:'🧮',t:'Calculator nelimitat + ghiduri complete'},
-          {i:'📸',t:'Scanner AI bonuri — nelimitat'},
-          {i:'📊',t:'Tracker profit + statistici avansate'},
-          {i:'📚',t:'Curs complet 8 module inclus'},
-          {i:'💬',t:'Grup privat + suport direct'},
-        ].map((it,i,arr) => `
-          <div style="display:flex;gap:9px;align-items:center;padding:8px 0;${i<arr.length-1?'border-bottom:1px solid var(--border);':''}">
-            <span style="font-size:.95rem;">${it.i}</span>
-            <span style="font-size:.82rem;color:var(--text);flex:1;">${it.t}</span>
-            <span style="color:var(--green);font-size:.8rem;">✓</span>
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="sec-label" style="margin-bottom:0;">Balanțe Bookmakers</div>
+          <div style="font-family:var(--mono);font-size:.82rem;color:var(--green);">Total: ${totalBalance.toFixed(0)} RON</div>
+        </div>
+        ${state.bookmakers.map(bm=>`
+          <div class="bm-card">
+            <div style="display:flex;align-items:center;gap:9px;">
+              <span style="font-size:1.1rem;">${BM_ICON[bm.name]||'📋'}</span>
+              <div><div style="font-weight:700;font-size:.88rem;">${bm.name}</div><div style="font-size:.65rem;color:var(--muted);">${bm.currency}</div></div>
+            </div>
+            <input class="bm-balance-input" type="number" step="0.01" value="${parseFloat(bm.balance||0).toFixed(2)}" data-id="${bm.id}" onchange="updateBalance('${bm.id}',this.value)">
           </div>
         `).join('')}
       </div>
 
       <div class="card">
-        <div class="sec-label">Setări Notificări</div>
-        ${[
-          {l:'Oferte noi',d:'Alertă imediată',on:true},
-          {l:'Oferte care expiră',d:'Reamintire 24h înainte',on:true},
-          {l:'Newsletter săptămânal',d:'Rezumat strategii',on:false},
-        ].map((it,i) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${i<2?'border-bottom:1px solid var(--border);':''}">
-            <div>
-              <div style="font-size:.82rem;color:var(--text);font-weight:500;">${it.l}</div>
-              <div style="font-size:.68rem;color:var(--muted);margin-top:1px;">${it.d}</div>
-            </div>
-            <div class="toggle-switch" style="background:${it.on?'var(--green)':'var(--border2)'};">
-              <div class="toggle-knob" style="left:${it.on?'18px':'2px'};"></div>
-            </div>
+        <div class="sec-label">Inclus în abonament</div>
+        ${['🎯 Oferte actualizate zilnic','🔔 Alerte Telegram instant','🧮 Calculator nelimitat','📸 Scanner AI bonuri','📊 Tracker profit complet','📚 Curs 8 module inclus','💬 Grup privat suport'].map((it,i,a)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${i<a.length-1?'border-bottom:1px solid var(--border);':''}">
+            <span style="font-size:.82rem;">${it}</span>
+            <span style="color:var(--green);font-size:.8rem;">✓</span>
           </div>
         `).join('')}
       </div>
     </div>
   `;
 }
+function bindBalances(){
+  document.querySelectorAll('.bm-balance-input').forEach(el=>{
+    el.addEventListener('change',()=>updateBalance(el.dataset.id,el.value));
+  });
+}
+async function updateBalance(id,val){
+  await updateBookmakerBalance(id,val);
+  // re-render just total
+  const totalEl=document.querySelector('[data-total-balance]');
+  if(totalEl)totalEl.textContent='Total: '+state.bookmakers.reduce((s,b)=>s+(parseFloat(b.balance)||0),0).toFixed(0)+' RON';
+}
 
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
-render();
-</script>
+async function init(){
+  document.getElementById('root').innerHTML=renderLoading();
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user){
+    state.user=session.user;
+    await loadBets();
+    await loadBookmakers();
+  }
+  state.loading=false;
+  render();
 
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_IN'&&session?.user){
+      state.user=session.user;
+      await loadBets();
+      await loadBookmakers();
+      render();
+    }else if(event==='SIGNED_OUT'){
+      state.user=null;state.bets=[];state.bookmakers=[];render();
+    }
+  });
+}
+
+init();
+</script>
 </body>
 </html>
